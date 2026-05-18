@@ -36,9 +36,20 @@ The Agda. This release mirrors `hyperpolymath/echo-types` at
 
 | Julia surface | Mirrors Agda module / lemmas |
 |---|---|
-| `EchoWitness`, `echo_intro`, `fiber`, `map_over*`, `comp_iso_*`, `cancel_iso_*` | `Echo.agda` (kernel; the funext-free core, see `EchoKernel`) |
+| `EchoWitness`, `echo_intro`, `fiber`, `map_over*`, `comp_iso_*`, `cancel_iso_*` | `Echo.agda` (kernel) |
 | `EchoR`, `echo_to_residue`, `residue_strictly_loses` | `EchoResidue.agda` (`echo-to-residue`, `strict-weakening-collapse`) |
 | `fiber_size`, `flog2`, `landauer_bound`, `fiber_erasure_bound`, `bennett_reversible`, `landauer_collapse` | `EchoFiberCount.agda` + `EchoThermodynamics.agda` |
+
+> **Pending upstream (forward-reference, not yet tracked):** the
+> mirrored kernel surface above corresponds to the curated funext-free
+> core being introduced upstream as `proofs/agda/EchoKernel.agda` in
+> echo-types **PR #56** (`foundation/echo-kernel-2026-05-18`, open at
+> time of writing). It is *not* on `origin/main` yet, so the SoT pin
+> deliberately stays at `2ca3122` (canonical `main`). When PR #56
+> merges, this pin bumps to the actual squash-merge commit and the
+> table row gains an explicit `EchoKernel` reference. Until then, this
+> companion tracks `Echo.agda` directly — `EchoKernel` adds no new
+> mathematics, only a curated re-export + a funext-free certificate.
 
 Scope limits are inherited honestly: the thermodynamics is a
 **finite-domain bound *shape*** in arbitrary natural units — not

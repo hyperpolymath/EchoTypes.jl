@@ -8,9 +8,18 @@
 #
 # Provenance pin: echo-types origin/main @ 2ca31220e3efdcf2708e6d2e04869993fbb1e53a
 # Mirrored modules: Echo.agda, EchoResidue.agda, EchoFiberCount.agda,
-# EchoThermodynamics.agda. Retraction R-2026-05-18 honoured: NО
-# NO graded-comonad / universal-property / conservativity surface
-# appears here (those are [RETRACTED] under earn-back gates upstream).
+# EchoThermodynamics.agda.
+#
+# Pending upstream (forward-reference, NOT yet tracked): the curated
+# funext-free core EchoKernel.agda is open as echo-types PR #56, not on
+# origin/main -- so the pin stays at canonical main and this mirrors
+# Echo.agda directly. EchoKernel adds no new mathematics (re-export +
+# funext-free certificate); the pin bumps to the squash-merge commit
+# when #56 lands. See README "Source of truth".
+#
+# Retraction R-2026-05-18 honoured: NO graded-comonad /
+# universal-property / conservativity surface appears here (those are
+# [RETRACTED] under earn-back gates upstream).
 
 module EchoTypes
 
