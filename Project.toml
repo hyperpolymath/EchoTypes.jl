@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# (MPL-2.0 is the automatic legal fallback until PMPL is formally
+#  recognised. The LICENSE file carries the MPL-2.0 text; every source
+#  file's SPDX header and this declaration agree — single, consistent
+#  licence statement, deliberately not a Project-vs-source split.)
+name = "EchoTypes"
+uuid = "a8ca608b-856a-4215-8c3d-f9ffd1705524"
+authors = ["Jonathan D.A. Jewell <6759885+hyperpolymath@users.noreply.github.com>"]
+version = "0.1.0"
+
+[compat]
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

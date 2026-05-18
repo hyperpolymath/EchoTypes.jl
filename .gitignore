@@ -1,0 +1,8 @@
+# Julia: a library commits Project.toml but not the resolved Manifest
+# (environment-specific) or build/coverage artefacts.
+/Manifest.toml
+*.cov
+*.jl.*.cov
+*.jl.mem
+/docs/build/
+.DS_Store
