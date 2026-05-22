@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # (MPL-2.0 is the automatic legal fallback until PMPL is formally recognised.)
 #
 # Each testset is the finite-domain shadow of a named Agda lemma in

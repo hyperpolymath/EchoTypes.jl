@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 <!-- (MPL-2.0 is the automatic legal fallback until PMPL is formally recognised.) -->
 
 # EchoTypes.jl
@@ -90,7 +90,7 @@ that is warranted.
 
 ## Licence
 
-`PMPL-1.0-or-later`; `MPL-2.0` (see [`LICENSE`](LICENSE)) is the
+`MPL-2.0`; `MPL-2.0` (see [`LICENSE`](LICENSE)) is the
 automatic legal fallback until PMPL is formally recognised. The
 LICENSE file, this statement, and every source SPDX header agree —
 one consistent licence, deliberately not a Project-vs-source split.
