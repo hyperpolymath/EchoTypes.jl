@@ -32,24 +32,45 @@ concrete finite data and check their stated laws numerically.
 ## Source of truth
 
 The Agda. This release mirrors `hyperpolymath/echo-types` at
-`origin/main` commit `2ca31220e3efdcf2708e6d2e04869993fbb1e53a`:
+`origin/main` commit `e7dded61bb25b8f86fb6e116f4e2827ca2044bcf`
+(2026-05-27 head, after the Tier-1+Tier-2 spine + F5 full-OFS
+earn-back + EchoProvenance landed):
 
 | Julia surface | Mirrors Agda module / lemmas |
 |---|---|
-| `EchoWitness`, `echo_intro`, `fiber`, `map_over*`, `comp_iso_*`, `cancel_iso_*` | `Echo.agda` (kernel) |
+| `EchoWitness`, `echo_intro`, `fiber`, `map_over*`, `comp_iso_*`, `cancel_iso_*` | `Echo.agda` (kernel — also re-pinned via `EchoKernel.agda` upstream) |
 | `EchoR`, `echo_to_residue`, `residue_strictly_loses` | `EchoResidue.agda` (`echo-to-residue`, `strict-weakening-collapse`) |
 | `fiber_size`, `flog2`, `landauer_bound`, `fiber_erasure_bound`, `bennett_reversible`, `landauer_collapse` | `EchoFiberCount.agda` + `EchoThermodynamics.agda` |
+| **v0.2.0** `encode`, `decode`, `*_roundtrip`, `f_factors_via_projection` | `EchoTotalCompletion.agda` (`A↔ΣEcho`, the slogan-unlock) |
+| **v0.2.0** `echo_factorisation`, `fibre_of_proj1_*`, `projection_fibre_roundtrips`, `ofs_witness` | `EchoOrthogonalFactorizationSystem.agda` (factorisation existence + projection-fibre identification — funext-qualified clauses NOT mirrored) |
+| **v0.2.0** `image`, `image_factor_*`, `is_surjective`, `is_injective`, `injective_fibres_proj_unique` | `EchoImageFactorization.agda` |
+| **v0.2.0** `no_section_of_collapsing_map`, `no_section_when_non_injective_at` | `EchoNoSectionGeneric.agda` |
+| **v0.2.0** `HasInverse`, `equiv_fibre_center`, `equiv_implies_injective`, `equiv_fibre_proj_unique`, `const_fun`, `const_fibre_section` | `EchoLossTaxonomy.agda` (4-case classifier — EQUIV/INJ/SURJ/CONST K-free skeletons) |
+| **v0.2.0** `collapse_as_fin`, `entropy_shadow`, `shannon_shadow`, `entropy_shadow_blind` | `EchoEntropy.agda` (discrete Shannon shadow) |
+| **v0.2.0** `LEcho`, `EchoMode`, `equal_at_mode`, `mode_equality_strictly_finer_at_linear` | `EchoObservationalEquivalence.agda` (mode-indexed equality) |
 
-> **Pending upstream (forward-reference, not yet tracked):** the
-> mirrored kernel surface above corresponds to the curated funext-free
-> core being introduced upstream as `proofs/agda/EchoKernel.agda` in
-> echo-types **PR #56** (`foundation/echo-kernel-2026-05-18`, open at
-> time of writing). It is *not* on `origin/main` yet, so the SoT pin
-> deliberately stays at `2ca3122` (canonical `main`). When PR #56
-> merges, this pin bumps to the actual squash-merge commit and the
-> table row gains an explicit `EchoKernel` reference. Until then, this
-> companion tracks `Echo.agda` directly — `EchoKernel` adds no new
-> mathematics, only a curated re-export + a funext-free certificate.
+### What is intentionally NOT mirrored
+
+- **Funext-qualified surfaces.** The F5 earn-back gate gave the full
+  OFS (uniqueness up to iso + diagonal lifting) upstream under
+  funext, and `EchoPullbackUnivF4` gives the strict pullback
+  universal property the same way. Julia has no funext to take as
+  hypothesis; the conditional claims would be vacuous. Only the
+  unconditional fragment of `ofs-witness` is mirrored.
+
+- **Retracted surface (R-2026-05-18).** Graded-comonad framing,
+  two-models, universal-property, conservativity. The mechanised
+  laws survive upstream (and so does the model-independence
+  theorem), but the *framing* is retracted; the companion does not
+  reproduce any of it.
+
+- **Higher type-theoretic structure.** UIP-strength claims
+  (full Σ-pair equality under injectivity, `A ↔ Echo(const y0)`,
+  contractible fibres), propositional truncation (the
+  (epi, mono) collapse of the image factorisation), and HoTT
+  identification types beyond decidable equality. The proof-relevant
+  *upper* of each pair is what's mirrored, in line with the
+  `--safe --without-K` discipline upstream.
 
 Scope limits are inherited honestly: the thermodynamics is a
 **finite-domain bound *shape*** in arbitrary natural units — not
@@ -82,11 +103,17 @@ about itself.
 
 ## Status
 
-`v0.1.0`, local development. **Not registered** in the Julia General
-registry and intentionally **not** part of the
-AcceleratorGate→KnotTheory→Skein→KRLAdapter registration chain — it is
-a standalone companion, registered only on its own merit if and when
-that is warranted.
+`v0.2.0`, local development. The v0.1.0 surface (`Echo`,
+`EchoResidue`, `EchoFiberCount`, `EchoThermodynamics`) is preserved
+unchanged; v0.2.0 adds executable shadows of the Tier-1+Tier-2
+canonical-identity spine that landed upstream on 2026-05-27
+(`EchoTotalCompletion`, `EchoOrthogonalFactorizationSystem`,
+`EchoImageFactorization`, `EchoNoSectionGeneric`, `EchoLossTaxonomy`,
+`EchoEntropy`, `EchoObservationalEquivalence`). Registered as
+`EchoTypes` in the hyperpolymath professional registry; **not**
+registered in the Julia General registry and intentionally **not**
+part of the AcceleratorGate→KnotTheory→Skein→KRLAdapter chain — it
+is a standalone companion.
 
 ## Licence
 
