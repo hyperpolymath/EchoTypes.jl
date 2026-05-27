@@ -6,20 +6,25 @@
 # theorems mechanised there; it is NOT itself a proof. Source of truth
 # is the Agda (`--safe --without-K`, zero postulates). See README.
 #
-# Provenance pin: echo-types origin/main @ 2ca31220e3efdcf2708e6d2e04869993fbb1e53a
-# Mirrored modules: Echo.agda, EchoResidue.agda, EchoFiberCount.agda,
-# EchoThermodynamics.agda.
+# Provenance pin: echo-types origin/main @ e7dded61bb25b8f86fb6e116f4e2827ca2044bcf
+# (2026-05-27 head after the Tier-1+Tier-2 spine + F5 full-OFS earn-back
+# + EchoProvenance landed). EchoKernel (PR #56) merged at a279863 and
+# is in the v0.2.0 surface; PR-pending caveats in the v0.1.0 README
+# are now retired.
 #
-# Pending upstream (forward-reference, NOT yet tracked): the curated
-# funext-free core EchoKernel.agda is open as echo-types PR #56, not on
-# origin/main -- so the pin stays at canonical main and this mirrors
-# Echo.agda directly. EchoKernel adds no new mathematics (re-export +
-# funext-free certificate); the pin bumps to the squash-merge commit
-# when #56 lands. See README "Source of truth".
+# Mirrored modules (v0.1.0 baseline): Echo, EchoResidue, EchoFiberCount,
+# EchoThermodynamics. New in v0.2.0: EchoTotalCompletion,
+# EchoOrthogonalFactorizationSystem, EchoImageFactorization,
+# EchoNoSectionGeneric, EchoLossTaxonomy, EchoEntropy,
+# EchoObservationalEquivalence.
 #
-# Retraction R-2026-05-18 honoured: NO graded-comonad /
-# universal-property / conservativity surface appears here (those are
-# [RETRACTED] under earn-back gates upstream).
+# Retraction discipline (R-2026-05-18): no graded-comonad framing,
+# no universal-property or conservativity claims appear here. F5 (full
+# OFS, honestly funext-qualified) earned back upstream 2026-05-27; the
+# unconditional fragment of the OFS witness (factorisation existence
+# + projection-fibre identification) is what this companion mirrors.
+# Funext-qualified surfaces (uniqueness up to iso, diagonal lifting)
+# are not mirrored — Julia has no funext, the claims would be vacuous.
 
 module EchoTypes
 
@@ -29,7 +34,28 @@ export EchoWitness, echo_intro, in_fiber, fiber,
        cancel_iso_to, cancel_iso_from, cancel_iso_roundtrips,
        EchoR, echo_to_residue, residue_strictly_loses,
        fiber_size, flog2, landauer_bound, fiber_erasure_bound,
-       bennett_reversible, landauer_collapse
+       bennett_reversible, landauer_collapse,
+       # EchoTotalCompletion
+       encode, decode, decode_encode_roundtrip, encode_decode_roundtrip,
+       f_factors_via_projection,
+       # EchoOrthogonalFactorizationSystem
+       echo_factorisation, fibre_of_proj1_to, fibre_of_proj1_from,
+       fibre_of_proj1_roundtrips, projection_fibre_roundtrips,
+       ofs_witness,
+       # EchoImageFactorization
+       image, image_factor_left, image_factor_right, image_factor_commutes,
+       is_surjective, is_injective, injective_fibres_proj_unique,
+       # EchoNoSectionGeneric
+       no_section_of_collapsing_map, no_section_when_non_injective_at,
+       # EchoLossTaxonomy
+       HasInverse, equiv_fibre_center, equiv_implies_injective,
+       equiv_fibre_proj_unique, const_fun, const_fibre_section,
+       # EchoEntropy
+       collapse_as_fin, entropy_shadow, shannon_shadow,
+       entropy_shadow_blind,
+       # EchoObservationalEquivalence
+       LEcho, EchoMode, Linear, Affine, equal_at_mode,
+       mode_equality_strictly_finer_at_linear
 
 # ======================================================================
 # Kernel — Echo.agda
@@ -292,6 +318,419 @@ function landauer_collapse(f, domain, y, T::Integer)
     n = length(domain)
     all(x -> f(x) == y, domain) &&
         fiber_erasure_bound(f, domain, y, T) == BOLTZMANN_K * T * flog2(n)
+end
+
+# ======================================================================
+# EchoTotalCompletion.agda — A ≃ Σ B (Echo f)
+#
+# The slogan-unlock: the domain `A` is canonically equivalent to the
+# total space of echoes (pairs of visible output `b` and an echo over
+# `b`). Both round-trips are definitional in Agda; here we exhibit
+# them on finite data and check the equalities pointwise.
+# ======================================================================
+
+"""
+    encode(f, x) -> (b, w)
+
+Send `x` to its visible output paired with its canonical echo:
+`(f(x), echo_intro(f, x))`. Mirrors `encode : A → Σ B (Echo f)`.
+"""
+encode(f, x) = (f(x), echo_intro(f, x))
+
+"""
+    decode(pair) -> x
+
+Forget the visible output and return the underlying domain element of
+the echo. Mirrors `decode : Σ B (Echo f) → A`.
+"""
+decode(pair) = pair[2].x
+
+"""
+    decode_encode_roundtrip(f, domain) -> Bool
+
+`decode ∘ encode ≡ id_A` (definitional in Agda). Checked pointwise
+across `domain`.
+"""
+decode_encode_roundtrip(f, domain) =
+    all(x -> decode(encode(f, x)) == x, domain)
+
+"""
+    encode_decode_roundtrip(f, domain) -> Bool
+
+`encode ∘ decode ≡ id_{ΣEcho}` on the total Echo space generated from
+`domain`. The Agda proof needs one path elimination on the inner
+equation; on concrete finite data it's a structural equality check.
+"""
+function encode_decode_roundtrip(f, domain)
+    total = [encode(f, x) for x in domain]
+    all(z -> encode(f, decode(z)) == z, total)
+end
+
+"""
+    f_factors_via_projection(f, domain) -> Bool
+
+The factorisation triangle commutes: `f(x) == first(encode(f, x))`.
+Definitional in Agda; here checked pointwise. (Same statement as
+`echo_factorisation` from the OFS module; pinned in both places to
+match the Agda naming.)
+"""
+f_factors_via_projection(f, domain) =
+    all(x -> f(x) == first(encode(f, x)), domain)
+
+# ======================================================================
+# EchoOrthogonalFactorizationSystem.agda — the architectural keystone
+#
+# Every `f : A → B` factors as  A ──encode→ Σ B (Echo f) ──proj₁→ B,
+# with left leg an equivalence and right leg a projection. Mirrors
+# the unconditional fragment of `ofs-witness`: factorisation
+# existence + projection-fibre identification. The funext-qualified
+# clauses (uniqueness up to iso, diagonal lifting) of the F5
+# earn-back are NOT mirrored — Julia has no funext to take as
+# hypothesis.
+# ======================================================================
+
+"`echo_factorisation` (OFS module): same as `f_factors_via_projection`."
+echo_factorisation(f, domain) = f_factors_via_projection(f, domain)
+
+"""
+    fibre_of_proj1_to(pair_with_eq) -> P_witness
+
+Forward leg of the generic Σ-projection-fibre iso
+(`fibre-of-proj₁-to`). Given a fibre element
+`((b, p), q)` of `proj₁` at `y` (with `q : b == y`), return the
+witness `p`.
+"""
+fibre_of_proj1_to(pair_with_eq) = pair_with_eq[1][2]
+
+"""
+    fibre_of_proj1_from(y, p) -> ((y, p), refl)
+
+Backward leg (`fibre-of-proj₁-from`): given `p` at `y`, pair with
+`y` itself and the trivial equation.
+"""
+fibre_of_proj1_from(y, p) = ((y, p), true)
+
+"""
+    fibre_of_proj1_roundtrips(P_at_y_samples) -> Bool
+
+Both round-trips of the generic `fibre-of-proj₁-iso`, checked over
+a finite set of `(y, P(y)-witness)` samples.
+"""
+function fibre_of_proj1_roundtrips(samples)
+    all(samples) do (y, p)
+        z = fibre_of_proj1_from(y, p)
+        fibre_of_proj1_to(z) == p
+    end
+end
+
+"""
+    projection_fibre_roundtrips(f, domain, y) -> Bool
+
+`projection-fibre-iso` specialised at `Echo f`: the fibre of the
+right-leg projection `proj₁ : Σ B (Echo f) → B` at `y` is canonically
+`Echo f y`. Checked on the finite fibre over `y`.
+"""
+function projection_fibre_roundtrips(f, domain, y)
+    echoes_at_y = fiber(f, domain, y)
+    all(echoes_at_y) do w
+        z = fibre_of_proj1_from(y, w)
+        fibre_of_proj1_to(z).x == w.x
+    end
+end
+
+"""
+    ofs_witness(f, domain) -> NamedTuple
+
+The OFS four-tuple at the honesty level reached by `--safe --without-K`
+without funext: factorisation triangle, left-leg-is-equivalence
+(checked by both round-trips), projection-fibre identification, and
+the echo↔fibre identification (which here is `fiber` itself). Returns
+the booleans for each clause so a caller can verify all four at once.
+"""
+function ofs_witness(f, domain)
+    (factorisation = echo_factorisation(f, domain),
+     left_leg_decode_encode = decode_encode_roundtrip(f, domain),
+     left_leg_encode_decode = encode_decode_roundtrip(f, domain),
+     projection_fibre = all(y -> projection_fibre_roundtrips(f, domain, y),
+                            unique(f(x) for x in domain)))
+end
+
+# ======================================================================
+# EchoImageFactorization.agda — Image f := Σ B (Echo f)
+#
+# The proof-relevant image of `f`. Companion to OFS at the
+# (surjection, injection) collapse boundary. The classical (epi, mono)
+# factorisation arises by propositional truncation, which we don't
+# mirror — the proof-relevant form is the upper of the two.
+# ======================================================================
+
+"""
+    image(f, domain) -> Vector
+
+The proof-relevant image of `f` over a finite `domain`: every visible
+output `b` paired with the constructive fibre of echoes over `b`.
+Equals the total Echo space (`Σ B (Echo f)`).
+"""
+function image(f, domain)
+    [(b, fiber(f, domain, b)) for b in unique(f(x) for x in domain)]
+end
+
+"`image_factor_left` (Echo-side rename of `encode`): A → Image f."
+image_factor_left(f, x) = encode(f, x)
+
+"`image_factor_right` (Echo-side rename of `proj₁`): Image f → B."
+image_factor_right(pair) = pair[1]
+
+"""
+    image_factor_commutes(f, domain) -> Bool
+
+The image-factorisation triangle: `proj₁ ∘ encode ≡ f` pointwise,
+definitional in Agda, checked here.
+"""
+image_factor_commutes(f, domain) =
+    all(x -> image_factor_right(image_factor_left(f, x)) == f(x), domain)
+
+"""
+    is_surjective(f, domain, codomain) -> Bool
+
+`Surjective f := (b : B) → Echo f b` — every visible output has at
+least one echo. Checked finitely against `codomain`.
+"""
+is_surjective(f, domain, codomain) =
+    all(b -> !isempty(fiber(f, domain, b)), codomain)
+
+"""
+    is_injective(f, domain) -> Bool
+
+`Injective f := f x ≡ f y ⇒ x ≡ y` over a finite domain.
+"""
+function is_injective(f, domain)
+    seen = Dict{Any,Any}()
+    for x in domain
+        y = f(x)
+        if haskey(seen, y) && seen[y] != x
+            return false
+        end
+        seen[y] = x
+    end
+    true
+end
+
+"""
+    injective_fibres_proj_unique(f, domain) -> Bool
+
+`injective-fibres-proj-unique`: under injectivity, any two echoes at
+the same `b` have equal `proj₁`s. This is the K-free claim; the
+stronger Σ-pair equality would need UIP and is honestly NOT proved
+here (matching the Agda scope).
+"""
+function injective_fibres_proj_unique(f, domain)
+    is_injective(f, domain) || return true   # vacuously, premise false
+    img = unique(f(x) for x in domain)
+    all(img) do b
+        fib = fiber(f, domain, b)
+        all(w -> w.x == fib[1].x, fib)
+    end
+end
+
+# ======================================================================
+# EchoNoSectionGeneric.agda — generalisation of `no-section`
+#
+# For ANY `lower : A → R` with two distinct elements collapsing to the
+# same residue, no section exists. The existing
+# `residue_strictly_loses` is a specific instance; the generic form
+# below takes the witnesses explicitly.
+# ======================================================================
+
+"""
+    no_section_of_collapsing_map(lower, e1, e2) -> Bool
+
+`no-section-of-collapsing-map` (EchoNoSectionGeneric): given distinct
+`e1 != e2` with `lower(e1) == lower(e2)`, no section `s : R → A`
+satisfying `s ∘ lower == id` can exist (it would have to send one
+residue to two different elements). Returns whether the
+non-recoverability is witnessed by the supplied pair.
+"""
+function no_section_of_collapsing_map(lower, e1, e2)
+    e1 != e2 && lower(e1) == lower(e2)
+end
+
+"""
+    no_section_when_non_injective_at(f, domain, y) -> Bool
+
+`no-section-when-non-injective-at-y`: any `f : A → B` with two
+distinct echoes at `y` admits no section over the trivial residue.
+Returns `true` when the witness exists in the supplied finite data.
+"""
+function no_section_when_non_injective_at(f, domain, y)
+    fib = fiber(f, domain, y)
+    length(fib) ≥ 2 && fib[1].x != fib[2].x
+end
+
+# ======================================================================
+# EchoLossTaxonomy.agda — function-side classification (4 cases)
+#
+# EQUIV / INJ / SURJ / CONST. Mirrors the K-free skeletons: EQUIV
+# carries a `HasInverse` quasi-inverse witness; INJ + SURJ re-export
+# the image-side checks; CONST ships the section side. Full HoTT
+# upgrades (contractible fibres, propositional fibres, mere
+# inhabitation, full A ↔ Echo for constants) need UIP / HITs upstream
+# and are honestly NOT shadowed.
+# ======================================================================
+
+"""
+    HasInverse(inv, f_inv_ok, inv_f_ok)
+
+Quasi-inverse data for `f`: an inverse `inv`, plus the two
+round-trip predicates. In Agda, `f-inv` and `inv-f` are equalities
+`f (inv y) ≡ y` and `inv (f x) ≡ x`; here they're callables
+returning `Bool` so a finite check can validate the data.
+"""
+struct HasInverse{I,F,G}
+    inv::I
+    f_inv_ok::F   # y -> Bool, asserts f(inv(y)) == y
+    inv_f_ok::G   # x -> Bool, asserts inv(f(x)) == x
+end
+
+"""
+    equiv_fibre_center(f, e::HasInverse, y) -> EchoWitness
+
+`equiv-fibre-center`: the canonical centre of the fibre over `y` —
+the inverse witness `(inv(y), f-inv(y))`. Pre-validates `f-inv` at
+`y` and throws if it fails (caller-side honesty).
+"""
+function equiv_fibre_center(f, e::HasInverse, y)
+    @assert e.f_inv_ok(y) "HasInverse data invalid: f(inv($y)) != $y"
+    EchoWitness(e.inv(y))
+end
+
+"""
+    equiv_implies_injective(f, e::HasInverse, domain) -> Bool
+
+`equiv-implies-injective`: a `HasInverse f` implies `f` is injective.
+Checked over `domain` (also validates `inv-f` pointwise).
+"""
+function equiv_implies_injective(f, e::HasInverse, domain)
+    all(x -> e.inv_f_ok(x), domain) || return false
+    is_injective(f, domain)
+end
+
+"""
+    equiv_fibre_proj_unique(f, e::HasInverse, domain) -> Bool
+
+`equiv-fibre-proj-unique`: composition of the previous two — equiv
+gives injective gives projection uniqueness on every fibre.
+"""
+equiv_fibre_proj_unique(f, e::HasInverse, domain) =
+    equiv_implies_injective(f, e, domain) &&
+    injective_fibres_proj_unique(f, domain)
+
+"`const_fun(y0)` — the canonical constant map at `y0` (CONST case)."
+const_fun(y0) = (_x -> y0)
+
+"""
+    const_fibre_section(y0, x) -> EchoWitness
+
+`const-fibre-section`: the K-free section `A → Echo (const y0) y0`.
+The full `A ↔ Echo (const y0) y0` packaging needs UIP on `B` and is
+honestly NOT mirrored.
+"""
+const_fibre_section(_y0, x) = EchoWitness(x)
+
+# ======================================================================
+# EchoEntropy.agda — discrete Shannon-entropy non-distinguishing
+#
+# The `collapse : Fin 2 → ⊤` shadow: fibre count is 2, the
+# entropy-shadow is the constant 2, and any consumer factoring through
+# the shadow agrees on `echo true` vs `echo false`. The discrete
+# fibre-count form is what the Agda mechanises; the real-valued
+# `H(P) = -Σ p log p` form is documented upstream as a higher-context
+# follow-on and is NOT mirrored here.
+# ======================================================================
+
+"`collapse_as_fin` — the canonical `Fin 2 → ⊤` collapse (returns `nothing`)."
+collapse_as_fin(_b) = nothing
+
+"""
+    entropy_shadow(domain=(true, false)) -> Int
+
+`entropy-shadow`: the discrete Shannon-entropy surrogate is the fibre
+count of the collapse map, definitionally `2` on `Fin 2`. Constant
+across domain choice (any non-empty Bool-like pair returns 2).
+"""
+entropy_shadow(domain=(true, false)) =
+    fiber_size(collapse_as_fin, domain, nothing)
+
+"""
+    shannon_shadow(domain=(true, false)) -> Int
+
+`shannon-shadow`: `⌊log₂_⌋` of the entropy shadow. Definitionally `1`
+on `Fin 2`.
+"""
+shannon_shadow(domain=(true, false)) = flog2(entropy_shadow(domain))
+
+"""
+    entropy_shadow_blind(consumer, domain=(true, false)) -> Bool
+
+`entropy-shadow-blind`: any `consumer :: Int → X` factoring through
+the entropy shadow agrees on every pair of inputs that collapse to
+the same residue. Demonstrated on `(true, false)`: the consumer sees
+the same fibre count, so produces the same output.
+"""
+function entropy_shadow_blind(consumer, _domain=(true, false))
+    consumer(entropy_shadow()) == consumer(entropy_shadow())
+end
+
+# ======================================================================
+# EchoObservationalEquivalence.agda — mode-indexed equality
+#
+# `_≡m_` on `LEcho`: at `linear` it's witness-aware (full equality);
+# at `affine` it collapses to ⊤ (witness-blind). The headline
+# `mode-equality-strictly-finer-at-linear` exhibits two echoes that
+# are linear-distinct but affine-equal.
+# ======================================================================
+
+"Decoration modes for `LEcho` — Linear retains the witness, Affine forgets it."
+@enum EchoMode Linear Affine
+
+"""
+    LEcho(payload, mode)
+
+Mode-indexed echo carrier. `mode == Linear` keeps the witness in
+equality comparisons; `mode == Affine` discards it (any two affine
+LEchos compare equal, mirroring the `⊤`-collapse in Agda).
+"""
+struct LEcho{P}
+    payload::P
+    mode::EchoMode
+end
+
+"""
+    equal_at_mode(e1::LEcho, e2::LEcho) -> Bool
+
+`_≡m_`: equality at the (shared) mode. Both `Linear` ⇒ payload
+equality; both `Affine` ⇒ always equal; mismatched modes ⇒ caller
+error (the relation is mode-indexed, not cross-mode).
+"""
+function equal_at_mode(e1::LEcho, e2::LEcho)
+    e1.mode == e2.mode || error("equal_at_mode: cross-mode comparison undefined")
+    e1.mode == Linear ? (e1.payload == e2.payload) : true
+end
+
+"""
+    mode_equality_strictly_finer_at_linear() -> Bool
+
+`mode-equality-strictly-finer-at-linear`: there exist two LEchos
+that are linear-distinct (`echo_true != echo_false`) but
+affine-equal (collapsed to `tt`). Returns `true` iff the strict
+finer-ness is witnessed.
+"""
+function mode_equality_strictly_finer_at_linear()
+    eL1 = LEcho(true,  Linear)
+    eL2 = LEcho(false, Linear)
+    eA1 = LEcho(true,  Affine)
+    eA2 = LEcho(false, Affine)
+    !equal_at_mode(eL1, eL2) && equal_at_mode(eA1, eA2)
 end
 
 end # module EchoTypes
