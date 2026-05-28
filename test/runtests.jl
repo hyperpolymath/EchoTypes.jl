@@ -261,4 +261,150 @@ using Test
         @test_throws ErrorException equal_at_mode(LEcho(1, Linear),
                                                   LEcho(1, Affine))
     end
+
+    # ------------------------------------------------------------------
+    # v0.3.0 additions — Tier 3 audience-facing spine from echo-types
+    # main @ eed4250 (2026-05-28). Each testset shadows a named Agda
+    # module landed since the v0.2.0 pin (e7dded6). HONEST BOUND
+    # discipline preserved: each module's matched-negative scope is
+    # noted in the testset comments, not exercised.
+    # ------------------------------------------------------------------
+
+    @testset "Provenance: 4-headline audience move (EchoProvenance.agda)" begin
+        # bool-over-nat-provenance: the worked Bool/ℕ instance.
+        P = bool_over_nat_provenance()
+        @test P.tag1 == true && P.tag2 == false
+
+        # Distinguishability is enforced at construction.
+        @test_throws ErrorException Provenance(true, true)
+
+        # Headline 1 — provenance-collapses-at: across many payloads.
+        for p in 0:5
+            @test provenance_collapses_at(P, p)
+        end
+
+        # Headline 2 — concrete echo carriers per tag.
+        e1 = prov_echo_tag1(P, 7)
+        e2 = prov_echo_tag2(P, 7)
+        @test prov_project(e1.x) == 7
+        @test prov_project(e2.x) == 7
+        @test e1.x.tag == true
+        @test e2.x.tag == false
+
+        # Headline 3 — echoes-distinguish-tag + echo-tag₁≢echo-tag₂.
+        for p in 0:3
+            @test echoes_distinguish_tag(P, p)
+            @test prov_echoes_distinct(P, p)
+        end
+
+        # Headline 4 — residue-collapses-tags: distinguishable echoes
+        # become residue-indistinguishable.
+        for p in 0:3
+            @test prov_residue_collapses_tags(P, p)
+        end
+    end
+
+    @testset "Security: per-region audit no-recovery (EchoSecurity.agda)" begin
+        # region-exit-audit-instance: the 2-region LEcho linear→affine
+        # walkthrough.
+        S = region_exit_audit_instance()
+
+        # Headline 1 — exit-collapses-at: at every region.
+        for r in S.regions
+            @test exit_collapses_at(S, r)
+        end
+
+        # Headline 2 — audit-no-recovery-at: per-region instantiation
+        # of no-section-of-collapsing-map.
+        for r in S.regions
+            @test audit_no_recovery_at(S, r)
+        end
+
+        # Honest-bound discipline: the audit is TYPE-LEVEL only. The
+        # matched-negative aliases (NotProved-bytes-zeroed etc.) in
+        # the Agda module pin the scope explicitly; we don't exercise
+        # them here, but the test name should never imply runtime
+        # erasure / side-channel safety / tamper-evidence.
+
+        # Construction enforces distinguishability + collapse.
+        bad_exit = (_r, res) -> res    # identity, not a collapse
+        @test_throws ErrorException Security((:r0,), bad_exit,
+                                              _r -> LEcho(true,  Linear),
+                                              _r -> LEcho(false, Linear))
+    end
+
+    @testset "ProbabilisticSupport: marginal loses index (EchoProbabilisticSupport.agda)" begin
+        # bool-indexed-nat-sampling.
+        S = bool_indexed_nat_sampling()
+        @test S.idx1 == true && S.idx2 == false
+        @test_throws ErrorException Sampling(true, true)
+
+        # 4 headlines, identical Σ-with-tag shape to Provenance:
+        for o in 0:4
+            @test support_collapses_at(S, o)
+            @test echo_carries_which_index(S, o)
+            @test samp_echoes_distinct(S, o)
+            @test samp_residue_loses_index(S, o)
+        end
+
+        # Concrete carriers per index.
+        e1 = samp_echo_idx1(S, 3)
+        e2 = samp_echo_idx2(S, 3)
+        @test sample_marginal(e1.x) == 3 && sample_marginal(e2.x) == 3
+        @test e1.x.index == true && e2.x.index == false
+
+        # HONEST BOUND: not measure-preserving, not a probability
+        # monad, no Kantorovich / coupling / extraction.
+    end
+
+    @testset "Differential: blur loses perturbation (EchoDifferential.agda)" begin
+        # bool-perturbed-nat-sensitivity.
+        S = bool_perturbed_nat_sensitivity()
+        @test S.pert1 == true && S.pert2 == false
+        @test_throws ErrorException Sensitivity(true, true)
+
+        # 4 headlines, identical Σ-with-tag shape to Provenance/Sampling:
+        for v in 0:4
+            @test blur_collapses_perturbations_at(S, v)
+            @test echo_carries_perturbation(S, v)
+            @test diff_echoes_distinct(S, v)
+            @test diff_residue_loses_perturbation(S, v)
+        end
+
+        # Concrete carriers per perturbation.
+        e1 = diff_echo_pert1(S, 9)
+        e2 = diff_echo_pert2(S, 9)
+        @test perturbed_blur(e1.x) == 9 && perturbed_blur(e2.x) == 9
+
+        # HONEST BOUND: not ε-DP, not Lipschitz, no noise calibration,
+        # no privacy-vs-utility, no adversary model.
+    end
+
+    @testset "LL-encoding gap: trivial-⊤ shadow + matched negative (EchoLLEncoding.agda)" begin
+        # The trivial encoding sends every mode to nothing (the ⊤ shadow).
+        E = trivial_encoding()
+        @test E.X(Linear) === Nothing && E.X(Affine) === Nothing
+        @test E.enc(Linear, LEcho(true, Linear)) === nothing
+        @test E.wX(nothing) === nothing
+
+        # enc-commutes at trivial: both sides reduce to nothing.
+        @test E.enc_commutes(LEcho(true,  Linear))
+        @test E.enc_commutes(LEcho(false, Linear))
+
+        # Headline — trivial-encoding-has-section: s ∘ wX ≡ id at ⊤.
+        @test trivial_encoding_has_section()
+
+        # ll-encoding-gap: existence packaged.
+        gap = ll_encoding_gap()
+        @test gap.section_holds
+
+        # source-no-section (matched-negative): the collapse-to-⊤
+        # map admits no section between two distinct LEchos.
+        @test source_no_section_holds()
+
+        # gap-paired: encoded-section-exists × source-section-does-not.
+        gp = gap_paired()
+        @test gp.encoded_section
+        @test gp.source_no_section
+    end
 end

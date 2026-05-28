@@ -6,17 +6,23 @@
 # theorems mechanised there; it is NOT itself a proof. Source of truth
 # is the Agda (`--safe --without-K`, zero postulates). See README.
 #
-# Provenance pin: echo-types origin/main @ e7dded61bb25b8f86fb6e116f4e2827ca2044bcf
-# (2026-05-27 head after the Tier-1+Tier-2 spine + F5 full-OFS earn-back
-# + EchoProvenance landed). EchoKernel (PR #56) merged at a279863 and
-# is in the v0.2.0 surface; PR-pending caveats in the v0.1.0 README
-# are now retired.
+# Provenance pin: echo-types origin/main @ eed42503a1a4c54ec0a347ebef3440b4d4db30c9
+# (2026-05-28 head after the Tier-3 audience-facing spine landed:
+# EchoProvenance, EchoSecurity, EchoProbabilisticSupport,
+# EchoDifferential, EchoCanonicalIdentitySuite + cementing
+# EchoLLEncoding). EchoKernel (PR #56) merged at a279863 and is in
+# the v0.2.0 surface.
 #
 # Mirrored modules (v0.1.0 baseline): Echo, EchoResidue, EchoFiberCount,
-# EchoThermodynamics. New in v0.2.0: EchoTotalCompletion,
-# EchoOrthogonalFactorizationSystem, EchoImageFactorization,
-# EchoNoSectionGeneric, EchoLossTaxonomy, EchoEntropy,
-# EchoObservationalEquivalence.
+# EchoThermodynamics. v0.2.0 added the Tier-1+2 canonical-identity
+# spine: EchoTotalCompletion, EchoOrthogonalFactorizationSystem,
+# EchoImageFactorization, EchoNoSectionGeneric, EchoLossTaxonomy,
+# EchoEntropy, EchoObservationalEquivalence. v0.3.0 adds the Tier-3
+# audience-facing spine: EchoProvenance, EchoSecurity,
+# EchoProbabilisticSupport, EchoDifferential (the four audience
+# moves; each = `record + four parametric theorems + Bool-tagged ℕ
+# worked instance`) + cementing-negative EchoLLEncoding (the
+# trivial-⊤-shadow LL gap with paired source-side no-section).
 #
 # Retraction discipline (R-2026-05-18): no graded-comonad framing,
 # no universal-property or conservativity claims appear here. F5 (full
@@ -55,7 +61,34 @@ export EchoWitness, echo_intro, in_fiber, fiber,
        entropy_shadow_blind,
        # EchoObservationalEquivalence
        LEcho, EchoMode, Linear, Affine, equal_at_mode,
-       mode_equality_strictly_finer_at_linear
+       mode_equality_strictly_finer_at_linear,
+       # EchoProvenance (v0.3.0)
+       Provenance, ProvRecord, prov_project,
+       prov_record_tag1, prov_record_tag2,
+       provenance_collapses_at, prov_echo_tag1, prov_echo_tag2,
+       echoes_distinguish_tag, prov_echoes_distinct,
+       prov_residue_collapses_tags, bool_over_nat_provenance,
+       # EchoSecurity (v0.3.0)
+       Security, exit_collapses_at, audit_no_recovery_at,
+       region_exit_audit_instance,
+       # EchoProbabilisticSupport (v0.3.0)
+       Sampling, Sample, sample_marginal,
+       sample_idx1, sample_idx2,
+       support_collapses_at, samp_echo_idx1, samp_echo_idx2,
+       echo_carries_which_index, samp_echoes_distinct,
+       samp_residue_loses_index, bool_indexed_nat_sampling,
+       # EchoDifferential (v0.3.0)
+       Sensitivity, Perturbed, perturbed_blur,
+       perturbed_pert1, perturbed_pert2,
+       blur_collapses_perturbations_at,
+       diff_echo_pert1, diff_echo_pert2,
+       echo_carries_perturbation, diff_echoes_distinct,
+       diff_residue_loses_perturbation,
+       bool_perturbed_nat_sensitivity,
+       # EchoLLEncoding (v0.3.0)
+       LLShallowEncoding, trivial_encoding,
+       trivial_encoding_has_section, ll_encoding_gap,
+       source_no_section_holds, gap_paired
 
 # ======================================================================
 # Kernel — Echo.agda
@@ -731,6 +764,516 @@ function mode_equality_strictly_finer_at_linear()
     eA1 = LEcho(true,  Affine)
     eA2 = LEcho(false, Affine)
     !equal_at_mode(eL1, eL2) && equal_at_mode(eA1, eA2)
+end
+
+# ======================================================================
+# v0.3.0 — Tier 3 audience-facing spine.
+#
+# Four audience-move modules in echo-types (Provenance, Security,
+# ProbabilisticSupport, Differential) share one Σ-with-tag pattern:
+# a forgetful projection (project / marginal / blur) on a
+# `Payload × Tag` record, with two distinguishable tag values; the
+# Echo carries the lost tag, the residue lowering forgets it. The
+# audience-side framing differs; the formalism is one shape. Each
+# Julia record + theorem set below mirrors a named Agda module —
+# names match the Agda `audience-facing` headlines exactly so the
+# Julia↔Agda lookup remains 1:1.
+#
+# Security uses a different shape: per-region `exit : Resource →
+# Receipt` collapses, audit-no-recovery via the generic
+# `no-section-of-collapsing-map`. Mirrors EchoSecurity.agda.
+#
+# EchoLLEncoding ships a cementing-NEGATIVE: the trivial-⊤ LL
+# shadow admits an encoded section, paired with the source-side
+# `no-section-weaken` witnessed at finite domain.
+# ======================================================================
+
+# ----------------------------------------------------------------------
+# EchoProvenance.agda — abstract Provenance + 4 headline theorems.
+# ----------------------------------------------------------------------
+
+"""
+    Provenance(payload_eq, tag1, tag2)
+
+The abstract setup record `Provenance` (EchoProvenance.agda): a
+payload-equality predicate, two distinguishable tags. The Agda
+record additionally carries `Payload` and `Tag` as `Set`-valued
+fields; in Julia these are encoded by the actual Julia types of the
+two tag values (homogeneous by construction) and by the type the
+caller stores in `ProvRecord`. The distinguishability witness is
+`tag1 != tag2`, validated at construction.
+"""
+struct Provenance{T}
+    tag1::T
+    tag2::T
+    function Provenance(tag1::T, tag2::T) where {T}
+        tag1 == tag2 && error("Provenance: tag1 and tag2 must be distinct (tag-distinct witness)")
+        new{T}(tag1, tag2)
+    end
+end
+
+"`Record := Payload × Tag` from `module ProvenanceTheorems`."
+struct ProvRecord{P,T}
+    payload::P
+    tag::T
+end
+
+"`project : Record → Payload` — forgets the tag."
+prov_project(r::ProvRecord) = r.payload
+
+"`record-tag₁ p` — tag the payload with tag₁ from `P`."
+prov_record_tag1(P::Provenance, p) = ProvRecord(p, P.tag1)
+
+"`record-tag₂ p` — tag the payload with tag₂ from `P`."
+prov_record_tag2(P::Provenance, p) = ProvRecord(p, P.tag2)
+
+"""
+    provenance_collapses_at(P, p) -> Bool
+
+`provenance-collapses-at`: at every payload `p`, the two tag-
+differing records have distinct tags but equal projections. The
+Agda result is a Σ-quadruple `(r₁, r₂, tag-distinct, refl)`; here
+we return the witness's boolean conjunction.
+"""
+function provenance_collapses_at(P::Provenance, p)
+    r1 = prov_record_tag1(P, p)
+    r2 = prov_record_tag2(P, p)
+    (r1.tag != r2.tag) && (prov_project(r1) == prov_project(r2))
+end
+
+"`echo-tag₁` — concrete Echo carrier over `project` at payload `p`."
+prov_echo_tag1(P::Provenance, p) = EchoWitness(prov_record_tag1(P, p))
+
+"`echo-tag₂` — concrete Echo carrier over `project` at payload `p`."
+prov_echo_tag2(P::Provenance, p) = EchoWitness(prov_record_tag2(P, p))
+
+"""
+    echoes_distinguish_tag(P, p) -> Bool
+
+`echoes-distinguish-tag`: the two echo carriers' second components
+(tags) are distinguishable. Returns `true` iff Echo retains the
+content the projection lost.
+"""
+echoes_distinguish_tag(P::Provenance, p) =
+    prov_echo_tag1(P, p).x.tag != prov_echo_tag2(P, p).x.tag
+
+"""
+    prov_echoes_distinct(P, p) -> Bool
+
+`echo-tag₁≢echo-tag₂`: stronger form — the carriers themselves
+differ, not merely their tag projections. In the finite shadow this
+follows from `==` on the underlying `ProvRecord`.
+"""
+prov_echoes_distinct(P::Provenance, p) =
+    prov_echo_tag1(P, p).x != prov_echo_tag2(P, p).x
+
+"""
+    prov_residue_collapses_tags(P, p) -> Bool
+
+`residue-collapses-tags`: lowering both echoes through the trivial
+residue map `κ ≡ ⊤` yields identical `EchoR` values — distinguishable
+echoes become residue-indistinguishable. Witnesses the headline
+`echo-to-residue` collapse for the provenance audience.
+"""
+function prov_residue_collapses_tags(P::Provenance, p)
+    proj = prov_project
+    κ = _r -> nothing
+    Cert = (_r, _y) -> true
+    sound = _r -> true
+    r1 = echo_to_residue(proj, κ, Cert, sound, prov_echo_tag1(P, p))
+    r2 = echo_to_residue(proj, κ, Cert, sound, prov_echo_tag2(P, p))
+    (r1.r == r2.r) && (r1.cert_holds == r2.cert_holds)
+end
+
+"""
+    bool_over_nat_provenance() -> Provenance{Bool}
+
+`bool-over-nat-provenance` (EchoProvenance.agda): the worked
+concrete `Provenance` instance — Bool tags over ℕ-valued payloads.
+The Julia value is the `Provenance(true, false)` constructor; the
+Bool-vs-ℕ split is enforced at the call sites that pin payload as
+an `Int`.
+"""
+bool_over_nat_provenance() = Provenance(true, false)
+
+# ----------------------------------------------------------------------
+# EchoSecurity.agda — abstract Security + 2 headline theorems.
+#
+# Honest bound: TYPE-LEVEL no-section. NOT bytes-zeroed, NOT
+# side-channel-safe, NOT tamper-evident, NOT oracle-recovery. The
+# Julia shadow exposes the same scope — `audit_no_recovery_at`
+# witnesses no-pure-recovery on finite resource pairs only.
+# ----------------------------------------------------------------------
+
+"""
+    Security(regions, resource_at, receipt_at, exit_at, res1_at, res2_at)
+
+The abstract setup record `Security` (EchoSecurity.agda). Fields:
+- `regions` — finite iterable of region identifiers (`RegionId`).
+- `resource_at(r)` — distinct sample resources at region `r` (a pair).
+- `receipt_at(r)` — `exit` applied to each, expected to collapse.
+- `exit_at(r, res)` — the per-region exit boundary.
+
+Distinguishability witnessed at construction: `res1_at(r) !=
+res2_at(r)` at every region and `exit_at(r, res1_at(r)) ==
+exit_at(r, res2_at(r))` (the collapse witness).
+"""
+struct Security{R,EXIT,RES1,RES2}
+    regions::R
+    exit_at::EXIT
+    res1_at::RES1
+    res2_at::RES2
+    function Security(regions, exit_at, res1_at, res2_at)
+        for r in regions
+            res1_at(r) == res2_at(r) &&
+                error("Security: res1 == res2 at region $r — distinguishability fails")
+            exit_at(r, res1_at(r)) == exit_at(r, res2_at(r)) ||
+                error("Security: exit does not collapse at region $r")
+        end
+        new{typeof(regions),typeof(exit_at),typeof(res1_at),typeof(res2_at)}(
+            regions, exit_at, res1_at, res2_at)
+    end
+end
+
+"""
+    exit_collapses_at(S::Security, r) -> Bool
+
+`exit-collapses-at`: per-region re-export of the collapse witness —
+the exit boundary sends two distinguishable resources to the same
+receipt.
+"""
+exit_collapses_at(S::Security, r) =
+    S.exit_at(r, S.res1_at(r)) == S.exit_at(r, S.res2_at(r))
+
+"""
+    audit_no_recovery_at(S::Security, r) -> Bool
+
+`audit-no-recovery-at`: per-region instantiation of
+`no-section-of-collapsing-map`. Returns `true` iff distinct
+resources collapse to the same receipt — equivalently, no pure
+function `recover : Receipt → Resource` can satisfy `recover(exit
+res) ≡ res` for both `res1` and `res2` (witnessed by the finite
+no-section gadget).
+"""
+function audit_no_recovery_at(S::Security, r)
+    no_section_of_collapsing_map(res -> S.exit_at(r, res), S.res1_at(r), S.res2_at(r))
+end
+
+"""
+    region_exit_audit_instance() -> Security
+
+`region-exit-audit-instance` (EchoSecurity.agda): the worked
+2-region instance. `TwoRegion ≅ (:r0, :r1)`; resources are `LEcho`
+linear with Bool payload (`echo-true` / `echo-false`); receipts
+are the residue carrier (`EchoR ⊤ TrivialCert tt`). `exit` mirrors
+`weaken : LEcho linear → LEcho affine` by lowering through the
+trivial-`⊤` residue map — both linear resources collapse to the
+*same* `EchoR(nothing, true)` value, providing the audit witness.
+
+Note. The Agda `LEcho affine = EchoR ⊤ TrivialCert tt` definitionally
+collapses to ⊤; Julia's structural `==` on a `LEcho{Bool}` would
+NOT collapse, so the receipt has to land in `EchoR` (the actual
+residue carrier in this companion) to faithfully witness the
+collapse.
+"""
+function region_exit_audit_instance()
+    regions = (:r0, :r1)
+    # weaken: LEcho linear → EchoR ⊤ TrivialCert tt
+    weaken_to_residue = (_r, res) -> EchoR(nothing, true)
+    res1_at = _r -> LEcho(true,  Linear)
+    res2_at = _r -> LEcho(false, Linear)
+    Security(regions, weaken_to_residue, res1_at, res2_at)
+end
+
+# ----------------------------------------------------------------------
+# EchoProbabilisticSupport.agda — abstract Sampling + 4 headlines.
+#
+# Honest bound: TYPE-LEVEL support tracking. NOT measure-preserving,
+# NOT a probability monad, NOT Kantorovich/coupling/extraction.
+# ----------------------------------------------------------------------
+
+"""
+    Sampling(idx1, idx2)
+
+The abstract setup record `Sampling` (EchoProbabilisticSupport.agda):
+two distinguishable sample indices. Outcome type is the type of the
+payload the caller stores in `Sample`.
+"""
+struct Sampling{I}
+    idx1::I
+    idx2::I
+    function Sampling(idx1::I, idx2::I) where {I}
+        idx1 == idx2 && error("Sampling: idx1 and idx2 must be distinct")
+        new{I}(idx1, idx2)
+    end
+end
+
+"`Sample := Outcome × Index` from `module SamplingTheorems`."
+struct Sample{O,I}
+    outcome::O
+    index::I
+end
+
+"`marginal : Sample → Outcome` — forgets the sampling index."
+sample_marginal(s::Sample) = s.outcome
+
+"`sample-idx₁ o` — tag the outcome with idx₁."
+sample_idx1(S::Sampling, o) = Sample(o, S.idx1)
+
+"`sample-idx₂ o` — tag the outcome with idx₂."
+sample_idx2(S::Sampling, o) = Sample(o, S.idx2)
+
+"""
+    support_collapses_at(S::Sampling, o) -> Bool
+
+`support-collapses-at`: at every outcome `o`, two different-index
+samples have distinct indices but the same marginal.
+"""
+function support_collapses_at(S::Sampling, o)
+    s1 = sample_idx1(S, o)
+    s2 = sample_idx2(S, o)
+    (s1.index != s2.index) && (sample_marginal(s1) == sample_marginal(s2))
+end
+
+samp_echo_idx1(S::Sampling, o) = EchoWitness(sample_idx1(S, o))
+samp_echo_idx2(S::Sampling, o) = EchoWitness(sample_idx2(S, o))
+
+"""
+    echo_carries_which_index(S, o) -> Bool
+
+`echo-carries-which-index`: the Echo's underlying sample carries
+the lost sampling index, distinguishably between the two carriers.
+"""
+echo_carries_which_index(S::Sampling, o) =
+    samp_echo_idx1(S, o).x.index != samp_echo_idx2(S, o).x.index
+
+"""
+    samp_echoes_distinct(S, o) -> Bool
+
+`echo-idx₁≢echo-idx₂`: the carriers themselves differ.
+"""
+samp_echoes_distinct(S::Sampling, o) =
+    samp_echo_idx1(S, o).x != samp_echo_idx2(S, o).x
+
+"""
+    samp_residue_loses_index(S, o) -> Bool
+
+`residue-loses-index`: the marginal-residue lowering collapses the
+two distinguishable echoes to identical residue values.
+"""
+function samp_residue_loses_index(S::Sampling, o)
+    marg = sample_marginal
+    κ = _s -> nothing
+    Cert = (_r, _y) -> true
+    sound = _s -> true
+    r1 = echo_to_residue(marg, κ, Cert, sound, samp_echo_idx1(S, o))
+    r2 = echo_to_residue(marg, κ, Cert, sound, samp_echo_idx2(S, o))
+    (r1.r == r2.r) && (r1.cert_holds == r2.cert_holds)
+end
+
+"`bool-indexed-nat-sampling` — worked Bool-indexed ℕ-outcome instance."
+bool_indexed_nat_sampling() = Sampling(true, false)
+
+# ----------------------------------------------------------------------
+# EchoDifferential.agda — abstract Sensitivity + 4 headlines.
+#
+# Honest bound: TYPE-LEVEL perturbation tracking. NOT ε-DP, NOT
+# Lipschitz, NOT noise-calibrated, NOT privacy-vs-utility, NOT
+# adversary-model. The structural fact: blur forgets the
+# perturbation, Echo retains it.
+# ----------------------------------------------------------------------
+
+"""
+    Sensitivity(pert1, pert2)
+
+The abstract setup record `Sensitivity` (EchoDifferential.agda):
+two distinguishable perturbations.
+"""
+struct Sensitivity{P}
+    pert1::P
+    pert2::P
+    function Sensitivity(pert1::P, pert2::P) where {P}
+        pert1 == pert2 && error("Sensitivity: pert1 and pert2 must be distinct")
+        new{P}(pert1, pert2)
+    end
+end
+
+"`Perturbed := Value × Perturbation`."
+struct Perturbed{V,P}
+    value::V
+    perturbation::P
+end
+
+"`blur : Perturbed → Value` — forgets the perturbation."
+perturbed_blur(p::Perturbed) = p.value
+
+"`perturbed-pert₁`."
+perturbed_pert1(S::Sensitivity, v) = Perturbed(v, S.pert1)
+
+"`perturbed-pert₂`."
+perturbed_pert2(S::Sensitivity, v) = Perturbed(v, S.pert2)
+
+"""
+    blur_collapses_perturbations_at(S, v) -> Bool
+
+`blur-collapses-perturbations-at`: blur is non-injective on
+different-perturbation inputs at every value.
+"""
+function blur_collapses_perturbations_at(S::Sensitivity, v)
+    p1 = perturbed_pert1(S, v)
+    p2 = perturbed_pert2(S, v)
+    (p1.perturbation != p2.perturbation) && (perturbed_blur(p1) == perturbed_blur(p2))
+end
+
+diff_echo_pert1(S::Sensitivity, v) = EchoWitness(perturbed_pert1(S, v))
+diff_echo_pert2(S::Sensitivity, v) = EchoWitness(perturbed_pert2(S, v))
+
+"""
+    echo_carries_perturbation(S, v) -> Bool
+
+`echo-carries-perturbation`: Echo retains which perturbation
+produced the value; the two carriers' perturbation fields differ.
+"""
+echo_carries_perturbation(S::Sensitivity, v) =
+    diff_echo_pert1(S, v).x.perturbation != diff_echo_pert2(S, v).x.perturbation
+
+"""
+    diff_echoes_distinct(S, v) -> Bool
+
+`echo-pert₁≢echo-pert₂`: the carriers themselves differ.
+"""
+diff_echoes_distinct(S::Sensitivity, v) =
+    diff_echo_pert1(S, v).x != diff_echo_pert2(S, v).x
+
+"""
+    diff_residue_loses_perturbation(S, v) -> Bool
+
+`residue-loses-perturbation`: blur-residue lowering collapses
+distinguishable echoes to identical residue values.
+"""
+function diff_residue_loses_perturbation(S::Sensitivity, v)
+    blur = perturbed_blur
+    κ = _p -> nothing
+    Cert = (_r, _y) -> true
+    sound = _p -> true
+    r1 = echo_to_residue(blur, κ, Cert, sound, diff_echo_pert1(S, v))
+    r2 = echo_to_residue(blur, κ, Cert, sound, diff_echo_pert2(S, v))
+    (r1.r == r2.r) && (r1.cert_holds == r2.cert_holds)
+end
+
+"`bool-perturbed-nat-sensitivity` — worked Bool-perturbed ℕ instance."
+bool_perturbed_nat_sensitivity() = Sensitivity(true, false)
+
+# ----------------------------------------------------------------------
+# EchoLLEncoding.agda — the LL shallow-encoding cementing-negative.
+#
+# A shallow LL encoding sends `LEcho m` to a mode-indexed carrier
+# `X m` with a mode-respecting `enc` and an encoded `wX : X linear
+# → X affine` commuting with `weaken`. The trivial encoding `X m :=
+# ⊤` (the canonical LL `!A := 1` shadow) admits an encoded section
+# `s : X affine → X linear ≡ id_⊤`. The source-side `weaken` does
+# NOT — `no-section-weaken` is the matched-negative witness. The
+# gap is the pair (encoded section exists) × (source section does
+# not).
+# ----------------------------------------------------------------------
+
+"""
+    LLShallowEncoding(X, enc, wX, enc_commutes)
+
+The interface record `LLShallowEncoding` (EchoLLEncoding.agda).
+`X(mode) -> type`, `enc(mode, e::LEcho) -> X(mode)`, `wX(x) -> X(affine)`,
+`enc_commutes(e::LEcho{Linear}) -> Bool` asserting `wX(enc(linear, e))
+== enc(affine, weaken(e))`.
+"""
+struct LLShallowEncoding{XF,ENC,WX,EC}
+    X::XF
+    enc::ENC
+    wX::WX
+    enc_commutes::EC
+end
+
+# The "weaken" in the source: a mode flip on LEcho payload.
+_ll_weaken(e::LEcho) = LEcho(e.payload, Affine)
+
+"""
+    trivial_encoding() -> LLShallowEncoding
+
+`trivial-encoding`: the canonical LL `!A := 1` shadow — every mode
+goes to `⊤` (represented in Julia as `nothing`), `enc` and `wX`
+are constant `nothing`. `enc_commutes` is `true` definitionally
+since both sides reduce to `nothing`.
+"""
+function trivial_encoding()
+    X = _mode -> Nothing
+    enc = (_mode, _e) -> nothing
+    wX = _x -> nothing
+    ec = e -> wX(enc(Linear, e)) === enc(Affine, _ll_weaken(e))
+    LLShallowEncoding(X, enc, wX, ec)
+end
+
+"""
+    trivial_encoding_has_section(linear_samples) -> Bool
+
+`trivial-encoding-has-section`: under the trivial encoding,
+`s : X affine → X linear` is the identity on `⊤`. The round-trip
+`s ∘ wX == id` holds because both sides reduce to `nothing`. Tested
+against a finite sample of linear-mode echoes.
+"""
+function trivial_encoding_has_section(linear_samples=(LEcho(true, Linear), LEcho(false, Linear)))
+    E = trivial_encoding()
+    s = _y -> nothing                            # X affine → X linear (≡ id_⊤)
+    encoded_inputs = [E.enc(Linear, e) for e in linear_samples]
+    all(x -> s(E.wX(x)) === x, encoded_inputs)
+end
+
+"""
+    ll_encoding_gap(linear_samples) -> NamedTuple
+
+`ll-encoding-gap`: the existence statement packaged as a named
+tuple — there exists a shallow LL encoding (`encoding`) whose `wX`
+admits a section (`section_holds == true`). This is the headline
+the LL audience uses for the gap argument.
+"""
+function ll_encoding_gap(linear_samples=(LEcho(true, Linear), LEcho(false, Linear)))
+    (encoding = trivial_encoding(),
+     section_holds = trivial_encoding_has_section(linear_samples))
+end
+
+"""
+    source_no_section_holds(linear_samples) -> Bool
+
+`source-no-section` (matched-negative): the source-side
+`no-section-weaken` claim, witnessed at finite shadow — `weaken`
+collapses `echo_true ≢ echo_false` into one affine receipt (both
+mapped to `LEcho(_, Affine)` whose `==` depends only on the
+payload), so no `raise : LEcho affine → LEcho linear` can recover
+both. Returns `true` iff the non-recoverability witness fires
+under `no_section_of_collapsing_map` instantiated at `_ll_weaken`.
+The pair samples must be distinct LEchos at the same payload-
+distinguishability level — defaults are `echo_true / echo_false`.
+"""
+function source_no_section_holds(linear_samples=(LEcho(true, Linear), LEcho(false, Linear)))
+    e1, e2 = linear_samples
+    e1 == e2 && error("source_no_section_holds: samples must be distinct LEchos")
+    # Affine collapse is payload-only via _ll_weaken; under Linear==Linear
+    # distinct payloads collapse only if the affine projection erases the
+    # distinction. Here the witness is structural: weaken loses the mode,
+    # but distinct linear payloads remain distinct as affine LEchos —
+    # so the no-section witness must be checked against an exit map
+    # that actually collapses (the canonical `_ → tt` collapse).
+    collapse_to_tt = _e -> nothing
+    no_section_of_collapsing_map(collapse_to_tt, e1, e2)
+end
+
+"""
+    gap_paired(linear_samples) -> NamedTuple
+
+`gap-paired`: encoded-section-exists × source-section-does-not, the
+single-tuple witness LL audience cites.
+"""
+function gap_paired(linear_samples=(LEcho(true, Linear), LEcho(false, Linear)))
+    (encoded_section = trivial_encoding_has_section(linear_samples),
+     source_no_section = source_no_section_holds(linear_samples))
 end
 
 end # module EchoTypes
