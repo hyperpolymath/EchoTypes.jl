@@ -112,4 +112,299 @@ using Test
         @test landauer_collapse(c, dom, 0, T)
         @test !landauer_collapse(idf, dom, 0, T)   # not a collapse map
     end
+
+    # ------------------------------------------------------------------
+    # v0.2.0 additions — Tier 1 + Tier 2 spine from echo-types main
+    # @ e7dded6 (2026-05-27). Each testset shadows a named Agda module
+    # landed since the v0.1.0 pin (2ca3122).
+    # ------------------------------------------------------------------
+
+    @testset "TotalCompletion: A ≃ Σ B (Echo f) (EchoTotalCompletion.agda)" begin
+        f = x -> x % 4
+        dom = 0:11
+
+        # decode-encode is the identity on A (definitional in Agda).
+        @test decode_encode_roundtrip(f, dom)
+
+        # encode-decode is the identity on Σ B (Echo f) (one path elim
+        # on the inner equation in Agda; structural here).
+        @test encode_decode_roundtrip(f, dom)
+
+        # The factorisation triangle commutes (definitional).
+        @test f_factors_via_projection(f, dom)
+
+        # Spot-check: encode then decode an explicit element.
+        @test decode(encode(f, 7)) == 7
+        @test encode(f, 7) == (3, EchoWitness(7))   # 7 % 4 == 3
+    end
+
+    @testset "OFS: factorisation + projection-fibre iso (EchoOrthogonalFactorizationSystem.agda)" begin
+        f = x -> x % 3
+        dom = 0:8
+
+        @test echo_factorisation(f, dom)
+
+        # Generic Σ-projection-fibre round-trips on synthetic samples.
+        samples = [(0, EchoWitness(3)), (1, EchoWitness(4)), (2, EchoWitness(5))]
+        @test fibre_of_proj1_roundtrips(samples)
+
+        # Specialised to Echo f at every visible output.
+        for y in 0:2
+            @test projection_fibre_roundtrips(f, dom, y)
+        end
+
+        # The packaged OFS witness — all four clauses hold.
+        w = ofs_witness(f, dom)
+        @test w.factorisation
+        @test w.left_leg_decode_encode
+        @test w.left_leg_encode_decode
+        @test w.projection_fibre
+    end
+
+    @testset "Image factorisation + Surj/Inj (EchoImageFactorization.agda)" begin
+        f_lossy = x -> x % 3
+        dom = 0:8
+
+        # Image = the proof-relevant total space.
+        img = image(f_lossy, dom)
+        @test length(img) == 3                    # outputs 0, 1, 2
+        @test Set(first.(img)) == Set([0, 1, 2])
+
+        # Triangle commutes.
+        @test image_factor_commutes(f_lossy, dom)
+
+        # Surjective onto its actual codomain.
+        @test is_surjective(f_lossy, dom, 0:2)
+        @test !is_surjective(f_lossy, dom, 0:5)    # 3,4,5 unreachable
+
+        # Injectivity classifier.
+        @test is_injective(identity, dom)
+        @test !is_injective(f_lossy, dom)
+
+        # K-free projection uniqueness under injectivity.
+        @test injective_fibres_proj_unique(identity, dom)
+        # For a non-injective f the premise is false, the implication
+        # is vacuously true (matches the Agda statement shape).
+        @test injective_fibres_proj_unique(f_lossy, dom)
+    end
+
+    @testset "Generic no-section (EchoNoSectionGeneric.agda)" begin
+        # no-section-of-collapsing-map: distinct elements collapsing
+        # to the same residue witness non-recoverability.
+        lower = b -> nothing
+        @test no_section_of_collapsing_map(lower, true, false)
+
+        # Equal elements do NOT witness collapse (premise false).
+        @test !no_section_of_collapsing_map(lower, true, true)
+
+        # Instance: f non-injective at y ⇒ no section.
+        f = x -> x % 2
+        @test no_section_when_non_injective_at(f, 0:5, 0)
+        @test no_section_when_non_injective_at(f, 0:5, 1)
+        @test !no_section_when_non_injective_at(identity, 0:5, 3)
+    end
+
+    @testset "LossTaxonomy: HasInverse + equiv/inj/surj/const (EchoLossTaxonomy.agda)" begin
+        # EQUIV case: g(x) = (x+1) % 5 with inverse g⁻¹(y) = (y+4) % 5
+        g     = x -> (x + 1) % 5
+        g_inv = y -> (y + 4) % 5
+        dom = 0:4
+        e = HasInverse(g_inv,
+                       y -> g(g_inv(y)) == y,
+                       x -> g_inv(g(x)) == x)
+
+        # The fibre centre is the inverse witness.
+        for y in dom
+            c = equiv_fibre_center(g, e, y)
+            @test g(c.x) == y
+        end
+
+        @test equiv_implies_injective(g, e, dom)
+        @test equiv_fibre_proj_unique(g, e, dom)
+
+        # CONST case: const_fun(42) has section A → Echo (const 42) 42.
+        c42 = const_fun(42)
+        for x in 0:5
+            w = const_fibre_section(42, x)
+            @test c42(w.x) == 42
+            @test w.x == x
+        end
+    end
+
+    @testset "Entropy: discrete Shannon shadow (EchoEntropy.agda)" begin
+        # collapse_as_fin : Fin 2 → ⊤ ; fibre count is 2.
+        @test entropy_shadow() == 2
+        @test entropy_shadow((true, false)) == 2
+
+        # ⌊log₂ 2⌋ = 1.
+        @test shannon_shadow() == 1
+
+        # entropy-shadow-blind: any consumer factoring through the
+        # shadow agrees across collapsed inputs.
+        @test entropy_shadow_blind(x -> x * 17)
+        @test entropy_shadow_blind(x -> "fib=$x")
+    end
+
+    @testset "Observational equivalence: mode-indexed equality (EchoObservationalEquivalence.agda)" begin
+        # Same payload, same mode ⇒ equal at any mode.
+        @test equal_at_mode(LEcho(1, Linear), LEcho(1, Linear))
+        @test equal_at_mode(LEcho(1, Affine), LEcho(1, Affine))
+
+        # Different payload, Linear ⇒ unequal; Affine ⇒ equal (⊤-collapse).
+        @test !equal_at_mode(LEcho(1, Linear), LEcho(2, Linear))
+        @test equal_at_mode(LEcho(1, Affine), LEcho(2, Affine))
+
+        # The headline strict-finerness witness.
+        @test mode_equality_strictly_finer_at_linear()
+
+        # Cross-mode comparisons are deliberately undefined (caller error).
+        @test_throws ErrorException equal_at_mode(LEcho(1, Linear),
+                                                  LEcho(1, Affine))
+    end
+
+    # ------------------------------------------------------------------
+    # v0.3.0 additions — Tier 3 audience-facing spine from echo-types
+    # main @ eed4250 (2026-05-28). Each testset shadows a named Agda
+    # module landed since the v0.2.0 pin (e7dded6). HONEST BOUND
+    # discipline preserved: each module's matched-negative scope is
+    # noted in the testset comments, not exercised.
+    # ------------------------------------------------------------------
+
+    @testset "Provenance: 4-headline audience move (EchoProvenance.agda)" begin
+        # bool-over-nat-provenance: the worked Bool/ℕ instance.
+        P = bool_over_nat_provenance()
+        @test P.tag1 == true && P.tag2 == false
+
+        # Distinguishability is enforced at construction.
+        @test_throws ErrorException Provenance(true, true)
+
+        # Headline 1 — provenance-collapses-at: across many payloads.
+        for p in 0:5
+            @test provenance_collapses_at(P, p)
+        end
+
+        # Headline 2 — concrete echo carriers per tag.
+        e1 = prov_echo_tag1(P, 7)
+        e2 = prov_echo_tag2(P, 7)
+        @test prov_project(e1.x) == 7
+        @test prov_project(e2.x) == 7
+        @test e1.x.tag == true
+        @test e2.x.tag == false
+
+        # Headline 3 — echoes-distinguish-tag + echo-tag₁≢echo-tag₂.
+        for p in 0:3
+            @test echoes_distinguish_tag(P, p)
+            @test prov_echoes_distinct(P, p)
+        end
+
+        # Headline 4 — residue-collapses-tags: distinguishable echoes
+        # become residue-indistinguishable.
+        for p in 0:3
+            @test prov_residue_collapses_tags(P, p)
+        end
+    end
+
+    @testset "Security: per-region audit no-recovery (EchoSecurity.agda)" begin
+        # region-exit-audit-instance: the 2-region LEcho linear→affine
+        # walkthrough.
+        S = region_exit_audit_instance()
+
+        # Headline 1 — exit-collapses-at: at every region.
+        for r in S.regions
+            @test exit_collapses_at(S, r)
+        end
+
+        # Headline 2 — audit-no-recovery-at: per-region instantiation
+        # of no-section-of-collapsing-map.
+        for r in S.regions
+            @test audit_no_recovery_at(S, r)
+        end
+
+        # Honest-bound discipline: the audit is TYPE-LEVEL only. The
+        # matched-negative aliases (NotProved-bytes-zeroed etc.) in
+        # the Agda module pin the scope explicitly; we don't exercise
+        # them here, but the test name should never imply runtime
+        # erasure / side-channel safety / tamper-evidence.
+
+        # Construction enforces distinguishability + collapse.
+        bad_exit = (_r, res) -> res    # identity, not a collapse
+        @test_throws ErrorException Security((:r0,), bad_exit,
+                                              _r -> LEcho(true,  Linear),
+                                              _r -> LEcho(false, Linear))
+    end
+
+    @testset "ProbabilisticSupport: marginal loses index (EchoProbabilisticSupport.agda)" begin
+        # bool-indexed-nat-sampling.
+        S = bool_indexed_nat_sampling()
+        @test S.idx1 == true && S.idx2 == false
+        @test_throws ErrorException Sampling(true, true)
+
+        # 4 headlines, identical Σ-with-tag shape to Provenance:
+        for o in 0:4
+            @test support_collapses_at(S, o)
+            @test echo_carries_which_index(S, o)
+            @test samp_echoes_distinct(S, o)
+            @test samp_residue_loses_index(S, o)
+        end
+
+        # Concrete carriers per index.
+        e1 = samp_echo_idx1(S, 3)
+        e2 = samp_echo_idx2(S, 3)
+        @test sample_marginal(e1.x) == 3 && sample_marginal(e2.x) == 3
+        @test e1.x.index == true && e2.x.index == false
+
+        # HONEST BOUND: not measure-preserving, not a probability
+        # monad, no Kantorovich / coupling / extraction.
+    end
+
+    @testset "Differential: blur loses perturbation (EchoDifferential.agda)" begin
+        # bool-perturbed-nat-sensitivity.
+        S = bool_perturbed_nat_sensitivity()
+        @test S.pert1 == true && S.pert2 == false
+        @test_throws ErrorException Sensitivity(true, true)
+
+        # 4 headlines, identical Σ-with-tag shape to Provenance/Sampling:
+        for v in 0:4
+            @test blur_collapses_perturbations_at(S, v)
+            @test echo_carries_perturbation(S, v)
+            @test diff_echoes_distinct(S, v)
+            @test diff_residue_loses_perturbation(S, v)
+        end
+
+        # Concrete carriers per perturbation.
+        e1 = diff_echo_pert1(S, 9)
+        e2 = diff_echo_pert2(S, 9)
+        @test perturbed_blur(e1.x) == 9 && perturbed_blur(e2.x) == 9
+
+        # HONEST BOUND: not ε-DP, not Lipschitz, no noise calibration,
+        # no privacy-vs-utility, no adversary model.
+    end
+
+    @testset "LL-encoding gap: trivial-⊤ shadow + matched negative (EchoLLEncoding.agda)" begin
+        # The trivial encoding sends every mode to nothing (the ⊤ shadow).
+        E = trivial_encoding()
+        @test E.X(Linear) === Nothing && E.X(Affine) === Nothing
+        @test E.enc(Linear, LEcho(true, Linear)) === nothing
+        @test E.wX(nothing) === nothing
+
+        # enc-commutes at trivial: both sides reduce to nothing.
+        @test E.enc_commutes(LEcho(true,  Linear))
+        @test E.enc_commutes(LEcho(false, Linear))
+
+        # Headline — trivial-encoding-has-section: s ∘ wX ≡ id at ⊤.
+        @test trivial_encoding_has_section()
+
+        # ll-encoding-gap: existence packaged.
+        gap = ll_encoding_gap()
+        @test gap.section_holds
+
+        # source-no-section (matched-negative): the collapse-to-⊤
+        # map admits no section between two distinct LEchos.
+        @test source_no_section_holds()
+
+        # gap-paired: encoded-section-exists × source-section-does-not.
+        gp = gap_paired()
+        @test gp.encoded_section
+        @test gp.source_no_section
+    end
 end

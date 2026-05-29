@@ -6,7 +6,7 @@
 name = "EchoTypes"
 uuid = "a8ca608b-856a-4215-8c3d-f9ffd1705524"
 authors = ["Jonathan D.A. Jewell <6759885+hyperpolymath@users.noreply.github.com>"]
-version = "0.1.0"
+version = "0.3.0"
 
 [compat]
 julia = "1.10"
