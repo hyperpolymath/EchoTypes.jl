@@ -64,6 +64,11 @@ following surfaces are out by policy:
   inversion, joint-bplus scaffolds. Separate pillar; a Julia shadow
   would require a new `Bord` carrier and explicit scope agreement
   before being added.
+- **Downstream system claims** — Valence Shell / Ochránce shell-state
+  and filesystem-receipt behaviour. No bridge is present; any future
+  example would be a *toy finite model of residue classification only*
+  (no filesystem, security, or cryptographic claim). See the README's
+  "Downstream bridges" note.
 
 See the README for the full carve-out rationale.
 
