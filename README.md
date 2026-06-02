@@ -106,6 +106,24 @@ Scope limits are inherited honestly: the thermodynamics is a
 quantitative physics, and not defined over infinite state spaces (the
 upstream `Fin n` restriction).
 
+### Downstream bridges (Valence Shell / Ochránce)
+
+**No current action.** [Valence Shell](https://github.com/hyperpolymath/valence-shell)
+and [Ochránce](https://github.com/hyperpolymath/ochrance) may later
+become downstream *examples* of Echo Types applied to shell state
+transitions and filesystem receipts — but this package does **not**
+claim to prove anything about those systems, and no integration is
+present here.
+
+If such a bridge is ever added it will be a **toy finite model of
+residue classification only**: a fixed finite set of pre-states mapped
+to post-states, with fibres / residues computed to classify
+recoverable vs. collapsed information — and **no** filesystem, POSIX,
+secure-deletion, GDPR, cryptographic-attestation, filesystem-integrity,
+or production-security claim attached. Source of truth remains the
+Agda; real-world receipt and security guarantees belong to Valence
+Shell and Ochránce, not EchoTypes.jl.
+
 ## Use
 
 ```julia
