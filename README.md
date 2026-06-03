@@ -1,9 +1,12 @@
-[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/hyperpolymath)
-
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 <!-- (MPL-2.0 is the automatic legal fallback until PMPL is formally recognised.) -->
 
 # EchoTypes.jl
+[![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=openssourcesecurity)](https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/EchoTypes.jl)
+
 
 An **executable companion** to the Agda library
 [`hyperpolymath/echo-types`](https://github.com/hyperpolymath/echo-types).
@@ -30,6 +33,33 @@ concrete finite data and check their stated laws numerically.
   functoriality + accumulation iso), the **residue** weakening
   (`EchoR`, with its strict non-recoverability witness), and the
   **finite-domain** Landauer/Bennett *bound shapes*.
+
+## Semantic fibre in finite domains
+
+The Agda repository is the formal source of truth. This package is the
+executable finite-domain shadow: it lets you compute concrete
+preimage fibres and inspect what they would license in examples.
+
+In this companion, a **semantic fibre** is usually the vector returned
+by `fiber(f, domain, y)`: the finite set of witnesses `x` in `domain`
+such that `f(x) == y`. A value is being used **avec fibre** when that
+declared map/domain/output triple accompanies it. A value is **sans
+fibre** when it is only known as a target-side value; no source-side
+origin constraint follows from the value alone.
+
+```julia
+using EchoTypes
+
+collapse = isodd
+avec = fiber(collapse, -2:2, true)       # declared map + domain
+Set(w.x for w in avec) == Set([-1, 1])   # possible origins
+
+target_only = true                       # just a Bool: sans fibre
+```
+
+Finite examples can demonstrate nontrivial constraints on possible
+origins and can falsify over-specific claims by counterexample. They
+do not establish proof obligations; those belong upstream in Agda.
 
 ## Source of truth
 
@@ -144,9 +174,10 @@ julia> fiber_erasure_bound(_ -> 0, 0:15, 0, 7)   # full-collapse Landauer bound
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
-Every testset is the finite shadow of a named Agda lemma; the suite
-must stay green and is the only correctness claim this package makes
-about itself.
+The testsets are finite shadows of named Agda lemmas, plus the small
+semantic-fibre vocabulary exercise over the kernel. The suite must stay
+green and is the only correctness claim this package makes about
+itself.
 
 ## Status
 
@@ -158,8 +189,9 @@ audience-facing spine that landed upstream on 2026-05-27/28
 (`EchoProvenance`, `EchoSecurity`, `EchoProbabilisticSupport`,
 `EchoDifferential`) plus the cementing-negative `EchoLLEncoding`
 (LL shallow-encoding gap with paired source-side no-section).
-Test suite: **253 passing assertions across 18 testsets**, each
-the finite shadow of a named Agda lemma. Registered as
+Test suite: **258 passing assertions across 19 testsets**, organised as
+finite shadows of named Agda lemmas plus the semantic-fibre
+vocabulary exercise over the kernel. Registered as
 `EchoTypes` in the hyperpolymath professional registry; **not**
 registered in the Julia General registry and intentionally **not**
 part of the AcceleratorGate→KnotTheory→Skein→KRLAdapter chain — it
