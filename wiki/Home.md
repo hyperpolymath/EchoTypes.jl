@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # EchoTypes.jl — wiki
 
 **Executable finite-domain companion** to the Agda library
@@ -9,6 +13,22 @@ Agda is the proof, the Julia is the lab.
 > test suite exhibits each theorem on concrete finite data; a green
 > test does not promote the claim to a theorem of the underlying
 > domain. The Agda module the test points to does.
+
+## Semantic fibre vocabulary
+
+`EchoTypes.jl` explores semantic fibres concretely by finite
+enumeration. For a declared map `f`, finite `domain`, and observed
+output `y`, `fiber(f, domain, y)` is the executable preimage fibre:
+all finite witnesses compatible with the observation.
+
+- **Avec fibre**: the target value is accompanied by the declared
+  map/domain/fibre, so examples can make origin constraints explicit.
+- **Sans fibre**: the value is only a valid target-side value; the
+  package does not infer source-side structure without the declared
+  finite model.
+
+This is runnable evidence and counterexample search, not proof. The
+Agda repo remains the formal source of truth.
 
 ## Quick links
 
@@ -40,10 +60,10 @@ you want to track HEAD.
 
 | Tier | Modules shadowed | Julia testsets |
 |---|---|---|
-| Foundation (v0.1.0) | Echo / EchoResidue / EchoFiberCount / EchoThermodynamics | 6 |
+| Foundation (v0.1.0) | Echo / EchoResidue / EchoFiberCount / EchoThermodynamics | 7 |
 | Canonical identity (v0.2.0) | TotalCompletion / OFS / Image / NoSectionGeneric / LossTaxonomy / Entropy / ObsEquivalence | 7 |
 | Audience-facing + LL gap (v0.3.0) | Provenance / Security / ProbabilisticSupport / Differential / LLEncoding | 5 |
-| **Total** | **15 Agda modules** | **18 testsets, 253 passing assertions** |
+| **Total** | **15 Agda modules + semantic-fibre vocabulary exercise** | **19 testsets, 258 passing assertions** |
 
 ## Intentionally NOT mirrored
 

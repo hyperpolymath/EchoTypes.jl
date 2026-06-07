@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
 # (MPL-2.0 is the automatic legal fallback until PMPL is formally recognised.)
 #
-# Each testset is the finite-domain shadow of a named Agda lemma in
-# hyperpolymath/echo-types. The Agda is the proof; these tests only
-# confirm the executable mirror behaves as the mechanised statement says.
+# Testsets are finite-domain shadows of named Agda lemmas in
+# hyperpolymath/echo-types, plus small vocabulary exercises over the
+# same kernel. The Agda is the proof; these tests only confirm the
+# executable mirror behaves as the mechanised statement says.
 
 using EchoTypes
 using Test
@@ -31,6 +32,30 @@ using Test
         @test map_over_id_holds(dom, f)
         @test map_over_comp_holds(dom, x -> x + 1, x -> 2x)
         @test map_over_comp_holds(dom, x -> x ÷ 2, x -> x % 4)
+    end
+
+    @testset "Kernel vocabulary: semantic fibre / avec / sans" begin
+        # Vocabulary exercise over the existing Echo.agda kernel. This
+        # is not a new proof obligation: finite enumeration shows what
+        # the declared map/domain/output triple licenses.
+        dom = -2:2
+        observed = true
+
+        parity_fibre = fiber(isodd, dom, observed)
+        @test Set(w.x for w in parity_fibre) == Set([-1, 1])
+        @test all(w -> isodd(w.x), parity_fibre)
+
+        # The same target-side Bool can sit over a different fibre
+        # under a different declared observation map.
+        positive = x -> x > 0
+        positive_fibre = fiber(positive, dom, observed)
+        @test Set(w.x for w in positive_fibre) == Set([1, 2])
+        @test Set(w.x for w in parity_fibre) != Set(w.x for w in positive_fibre)
+
+        # Sans fibre: valid target-side value only; no origin
+        # constraint is licensed without a declared map/domain.
+        target_only = observed
+        @test target_only in (false, true)
     end
 
     @testset "Kernel: composition accumulation iso (Echo.agda)" begin
