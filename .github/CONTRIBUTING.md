@@ -47,12 +47,7 @@ validates them.
 
 ## Language policy
 
-The estate restricts which languages may be used. In particular Python,
-Go, TypeScript, AffineScript, V-lang, Java/Kotlin, Swift and Makefiles
-are **not** accepted in new code; AffineScript, Rust/SPARK, Zig, Deno,
-Gleam, Elixir, Haskell, Idris2, Agda, Julia and OCaml are. CI enforces
-this, so check the policy in `hyperpolymath/standards` before
-introducing a new language.
+The estate restricts which languages and tools may be used. For new code, the primary allowed languages are AffineScript, Rust and Gleam. TypeScript, Go, Java/Kotlin and Python are banned. Deno is the approved runtime; Julia, OCaml and Ada are allowed for their documented special-purpose uses; and Mustfile/Justfile are the approved build tools. CI enforces this, so check the policy in `hyperpolymath/standards` before introducing a new language.
 
 ## Documentation format
 
