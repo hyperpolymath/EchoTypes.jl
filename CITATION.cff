@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "EchoTypes.jl"
+abstract: "Executable finite-domain companion to the Agda library echo-types — a runnable model, not a proof."
+authors:
+  - family-names: "Jewell"
+    given-names: "Jonathan D.A."
+    orcid: "https://orcid.org/0000-0002-3078-6652"
+repository-code: "https://github.com/hyperpolymath/EchoTypes.jl"
+keywords:
+  - "hyperpolymath"
+  - "open-source"
+  - "computational-science"
+  - "echo-types"
+  - "epistemic-computing"
+  - "epistemic-infrastructure"
+  - "equivalence-aware-computing"
+  - "finite-model"
+  - "julia-package"
+  - "reproducible-research"
+  - "research-software"
+  - "scientific-software"
+  - "typed-provenance"
+  - "veridical-computing"
