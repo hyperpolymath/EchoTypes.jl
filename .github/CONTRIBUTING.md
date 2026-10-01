@@ -83,6 +83,7 @@ unsigned pushes. Estate policy:
   through the API (`createCommitOnBranch` or the estate `signed-push` action)
   so that GitHub signs each commit.
 - Merge PRs with **squash**. The ruleset checks every commit on the PR branch,
-  not just the result, so one unsigned commit blocks the merge. Re-create such a
-  branch with signed commits (`git cherry-pick -S`) and open a new PR.
+  not just the result, so one unsigned commit blocks the merge. Re-create the
+  branch with signed commits (`git cherry-pick -S`) and update the existing PR
+  branch. Open a new PR only if repository controls prevent updating that branch.
   Rebase-merge replays commits unsigned and is disabled.
