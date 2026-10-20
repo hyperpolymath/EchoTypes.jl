@@ -51,10 +51,12 @@ Agda repo remains the formal source of truth.
 
 ## Current pin
 
-`v0.3.0` mirrors echo-types `origin/main` at
-`eed42503a1a4c54ec0a347ebef3440b4d4db30c9` (2026-05-28). The
-package's preamble carries the SoT pin; re-pin a fresh clone if
-you want to track HEAD.
+`v0.4.0` mirrors echo-types `origin/main` at
+`eed42503a1a4c54ec0a347ebef3440b4d4db30c9` (2026-05-28) for every
+module except `EchoAggregation`, which is mirrored from
+`703dd77af402e959b46f49e8ce2e084521bedbae`. The package's preamble
+carries the SoT pin; re-pin a fresh clone if you want to track HEAD.
+(`v0.3.0` was never tagged on its own; its content ships in v0.4.0.)
 
 ## Coverage map (one-line summary)
 
@@ -63,7 +65,8 @@ you want to track HEAD.
 | Foundation (v0.1.0) | Echo / EchoResidue / EchoFiberCount / EchoThermodynamics | 7 |
 | Canonical identity (v0.2.0) | TotalCompletion / OFS / Image / NoSectionGeneric / LossTaxonomy / Entropy / ObsEquivalence | 7 |
 | Audience-facing + LL gap (v0.3.0) | Provenance / Security / ProbabilisticSupport / Differential / LLEncoding | 5 |
-| **Total** | **15 Agda modules + semantic-fibre vocabulary exercise** | **19 testsets, 258 passing assertions** |
+| Aggregation (v0.4.0) | Aggregation (monoid fold, homomorphism law, no-canonical-disaggregation, `pairSum` instance) | 2 |
+| **Total** | **16 Agda modules + semantic-fibre vocabulary exercise** | **21 testsets, 302 passing assertions** |
 
 ## Intentionally NOT mirrored
 
