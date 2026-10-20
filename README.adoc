@@ -247,7 +247,7 @@ cementing-negative `+EchoLLEncoding+` (LL shallow-encoding gap with
 paired source-side no-section). Unreleased on top of v0.3.0:
 `+EchoAggregation+` (mirrored from echo-types `+703dd77+`, not from
 `+eed4250+`). Test suite:
-*294 passing assertions across 21 testsets*, organised as finite shadows of named Agda lemmas
+*297 passing assertions across 21 testsets*, organised as finite shadows of named Agda lemmas
 plus the semantic-fibre vocabulary exercise over the kernel. Registered
 as `+EchoTypes+` in the hyperpolymath professional registry; *not*
 registered in the Julia General registry and intentionally *not* part of
