@@ -1338,6 +1338,11 @@ end
 # any array shape, so `vcat` appends sequences rather than stacking rows.
 _items(xs) = vec(collect(xs))
 
+# Concatenate two item lists WITHOUT promoting element types: `vcat` of an
+# Int vector and a Float64 vector converts the integers, which can round them
+# and make a lawful monoid look as if it violated the append law.
+_concat(xs, ys) = append!(append!(Any[], xs), ys)
+
 """
     oplus_fold(M, xs)
 
@@ -1356,9 +1361,10 @@ oplus_fold(M::Monoid, xs) = foldr(M.op, _items(xs); init = M.ε)
 `⊕-fold (xs ++ ys) == ⊕-fold xs ⊕ ⊕-fold ys`, checked at `xs`, `ys`.
 """
 function oplus_fold_append_holds(M::Monoid, xs, ys)
-    # Materialise once: `vcat` of two generators would nest them as elements.
+    # Materialise once (`vcat` of two generators would nest them as elements) and
+    # concatenate without type promotion.
     xs, ys = _items(xs), _items(ys)
-    oplus_fold(M, vcat(xs, ys)) == M.op(oplus_fold(M, xs), oplus_fold(M, ys))
+    oplus_fold(M, _concat(xs, ys)) == M.op(oplus_fold(M, xs), oplus_fold(M, ys))
 end
 
 """
@@ -1390,7 +1396,7 @@ operational semantics.
 """
 function aggregation_as_fold_holds(G::GroupAggregator, M::Monoid, vs, ws)
     vs, ws = _items(vs), _items(ws)   # see oplus_fold_append_holds
-    aggregate_values(G, M, vcat(vs, ws)) ==
+    aggregate_values(G, M, _concat(vs, ws)) ==
         M.op(aggregate_values(G, M, vs), aggregate_values(G, M, ws))
 end
 
@@ -1435,8 +1441,15 @@ no_canonical_disaggregation_of(agg_map, x, y) =
 
 # --- Example-PairSum: the macro instance (ℕ × ℕ -> ℕ by +) -------------
 
-"`pairSum (a , b) = a + b`."
-pair_sum(p::Tuple{Integer,Integer}) = p[1] + p[2]
+"""
+    pair_sum(p)
+
+`pairSum (a , b) = a + b` on `ℕ × ℕ`, with ℕ modelled as non-negative `Int`.
+Restricted to `Int` on purpose: a narrower integer type would overflow here
+while the `sum_monoid` fold (whose unit is an `Int`) would not, breaking
+`pair_sum_is_fold` for inputs the method accepted.
+"""
+pair_sum(p::Tuple{Int,Int}) = p[1] + p[2]
 
 """
     pair_sum_is_fold(p) -> Bool
@@ -1444,7 +1457,7 @@ pair_sum(p::Tuple{Integer,Integer}) = p[1] + p[2]
 `pairSum-is-fold`: `pair_sum` IS the `sum_monoid` fold of its two fields,
 so the macro instance is a special case of the general form.
 """
-pair_sum_is_fold(p::Tuple{Integer,Integer}) =
+pair_sum_is_fold(p::Tuple{Int,Int}) =
     pair_sum(p) == oplus_fold(sum_monoid(), [p[1], p[2]])
 
 "`ledger₁ = (0 , 1)`."
