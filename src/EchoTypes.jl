@@ -24,7 +24,7 @@
 # worked instance`) + cementing-negative EchoLLEncoding (the
 # trivial-⊤-shadow LL gap with paired source-side no-section).
 #
-# Unreleased on top of v0.3.0: EchoAggregation (general monoid/group
+# v0.4.0 adds EchoAggregation (general monoid/group
 # aggregation, echo-types#175), mirrored from echo-types origin/main
 # @ 703dd77af402e959b46f49e8ce2e084521bedbae. The rest of this header's
 # provenance pin is unchanged.
@@ -94,7 +94,7 @@ export EchoWitness, echo_intro, in_fiber, fiber,
        LLShallowEncoding, trivial_encoding,
        trivial_encoding_has_section, ll_encoding_gap,
        source_no_section_holds, gap_paired,
-       # EchoAggregation (unreleased; general monoid/group form, echo-types#175)
+       # EchoAggregation (v0.4.0; general monoid/group form, echo-types#175)
        Monoid, GroupAggregator, monoid_laws_hold,
        oplus_fold, oplus_fold_append_holds,
        aggregate_values, aggregation_as_fold_holds,
