@@ -472,6 +472,13 @@ using Test
         @test oplus_fold_append_holds(sum_monoid(), Int[], [4, 5])
         @test oplus_fold_append_holds(min_monoid(), Union{Nothing,Int}[], Union{Nothing,Int}[])
 
+        # Generators / lazy iterables are accepted (not nested by `vcat`).
+        @test oplus_fold_append_holds(sum_monoid(), (x for x in 1:2), (y for y in 3:4))
+        @test oplus_fold_append_holds(sum_monoid(), (x for x in 1:6 if x > 2), (y for y in 3:4))
+        @test aggregation_as_fold_holds(count_aggregator(), sum_monoid(),
+                                        (v for v in 1:2), (v for v in 3:5))
+        @test oplus_fold(sum_monoid(), (x for x in 1:3 if x > 1)) == 5
+
         # Concrete fold values.
         @test oplus_fold(sum_monoid(), [1, 2, 3]) == 6
         @test oplus_fold(max_monoid(), [1, 5, 3]) == 5

@@ -1337,12 +1337,13 @@ end
 """
     oplus_fold(M, xs)
 
-`⊕-fold`: fold a list through the monoid as a RIGHT fold,
+`⊕-fold`: fold a list (any finite iterable, materialised once) through the
+monoid as a RIGHT fold,
 `x₁ ⊕ (x₂ ⊕ (… ⊕ ε))` (`foldr op ε`), matching Agda's `foldr`. For an
 associative `op` the direction is immaterial; for a non-associative one the
 result depends on it, so this fixes the reading falsifiers are run against.
 """
-oplus_fold(M::Monoid, xs) = foldr(M.op, xs; init = M.ε)
+oplus_fold(M::Monoid, xs) = foldr(M.op, collect(xs); init = M.ε)
 
 """
     oplus_fold_append_holds(M, xs, ys) -> Bool
@@ -1350,8 +1351,11 @@ oplus_fold(M::Monoid, xs) = foldr(M.op, xs; init = M.ε)
 `⊕-fold-++`: the fold is a monoid homomorphism on list concatenation,
 `⊕-fold (xs ++ ys) == ⊕-fold xs ⊕ ⊕-fold ys`, checked at `xs`, `ys`.
 """
-oplus_fold_append_holds(M::Monoid, xs, ys) =
+function oplus_fold_append_holds(M::Monoid, xs, ys)
+    # Materialise once: `vcat` of two generators would nest them as elements.
+    xs, ys = collect(xs), collect(ys)
     oplus_fold(M, vcat(xs, ys)) == M.op(oplus_fold(M, xs), oplus_fold(M, ys))
+end
 
 """
     GroupAggregator(agg)
@@ -1380,9 +1384,11 @@ equals combining `aggregate_values` of each, checked at `vs`, `ws`.
 Honest scope: the fold's homomorphism property, NOT SQL GROUP-BY's full
 operational semantics.
 """
-aggregation_as_fold_holds(G::GroupAggregator, M::Monoid, vs, ws) =
+function aggregation_as_fold_holds(G::GroupAggregator, M::Monoid, vs, ws)
+    vs, ws = collect(vs), collect(ws)   # see oplus_fold_append_holds
     aggregate_values(G, M, vcat(vs, ws)) ==
         M.op(aggregate_values(G, M, vs), aggregate_values(G, M, ws))
+end
 
 # --- The four concrete instances (ℕ modelled as non-negative Int) -----
 
