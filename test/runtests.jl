@@ -453,6 +453,18 @@ using Test
         # 0 is only a right identity), so `monoid_laws_hold` can say `false`.
         @test !monoid_laws_hold(Monoid(0, -), nat)
 
+        # Samples are materialised once (one-shot iterators work) and an
+        # empty sample is an error, not a vacuous `true`.
+        @test monoid_laws_hold(sum_monoid(), (x for x in nat))
+        @test_throws ErrorException monoid_laws_hold(sum_monoid(), Int[])
+
+        # `min_inf` keeps its domain closed: ℕ ∪ {∞} only.
+        @test min_inf(nothing, nothing) === nothing
+        @test_throws MethodError min_inf(nothing, "x")
+
+        # ⊕-fold is a RIGHT fold: for non-associative `-` it is 1-(2-(3-0)).
+        @test oplus_fold(Monoid(0, -), [1, 2, 3]) == 2
+
         # ⊕-fold-++ at each instance.
         @test oplus_fold_append_holds(sum_monoid(), [1, 2, 3], [4, 5])
         @test oplus_fold_append_holds(max_monoid(), [1, 5, 3], [4, 2])

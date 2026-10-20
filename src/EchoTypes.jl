@@ -1323,18 +1323,24 @@ end
 
 `assoc`, `identity-l`, `identity-r` of `M`, checked over every triple /
 element drawn from `samples`. A `false` is a counterexample; a `true` is
-evidence on those samples only.
+evidence on those samples only. `samples` is materialised once, so one-shot
+iterators work; an empty `samples` is an error rather than a vacuous `true`.
 """
 function monoid_laws_hold(M::Monoid, samples)
-    all(a -> M.op(M.ε, a) == a && M.op(a, M.ε) == a, samples) &&
+    ss = collect(samples)   # materialise once: `samples` is traversed four times
+    isempty(ss) && error("monoid_laws_hold: samples must be non-empty")
+    all(a -> M.op(M.ε, a) == a && M.op(a, M.ε) == a, ss) &&
         all(t -> M.op(M.op(t[1], t[2]), t[3]) == M.op(t[1], M.op(t[2], t[3])),
-            Iterators.product(samples, samples, samples))
+            Iterators.product(ss, ss, ss))
 end
 
 """
     oplus_fold(M, xs)
 
-`⊕-fold`: fold a list through the monoid (`foldr op ε`).
+`⊕-fold`: fold a list through the monoid as a RIGHT fold,
+`x₁ ⊕ (x₂ ⊕ (… ⊕ ε))` (`foldr op ε`), matching Agda's `foldr`. For an
+associative `op` the direction is immaterial; for a non-associative one the
+result depends on it, so this fixes the reading falsifiers are run against.
 """
 oplus_fold(M::Monoid, xs) = foldr(M.op, xs; init = M.ε)
 
@@ -1395,7 +1401,7 @@ max_monoid() = Monoid(0, max)
 `_⊓∞_`: min over ℕ ∪ {∞}, with `nothing` = ∞ (the min-identity) and an
 `Int` standing for `just n`.
 """
-min_inf(a::Nothing, b) = b
+min_inf(a::Nothing, b::Union{Nothing,Integer}) = b
 min_inf(a::Integer, b::Nothing) = a
 min_inf(a::Integer, b::Integer) = min(a, b)
 

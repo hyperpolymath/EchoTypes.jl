@@ -64,7 +64,10 @@ The Agda. This release mirrors `+hyperpolymath/echo-types+` at
 (2026-05-28 head, after the Tier-3 audience-facing spine landed —
 EchoProvenance, EchoSecurity, EchoProbabilisticSupport,
 EchoDifferential, EchoLLEncoding, plus the EchoCanonicalIdentitySuite
-re-export bundle):
+re-export bundle). The unreleased `+EchoAggregation+` entry below is
+mirrored from a later commit,
+`+703dd77af402e959b46f49e8ce2e084521bedbae+`; every other row keeps the
+pin above:
 
 [width="100%",cols="50%,50%",options="header",]
 |===
@@ -242,8 +245,9 @@ landed upstream on 2026-05-27/28 (`+EchoProvenance+`, `+EchoSecurity+`,
 `+EchoProbabilisticSupport+`, `+EchoDifferential+`) plus the
 cementing-negative `+EchoLLEncoding+` (LL shallow-encoding gap with
 paired source-side no-section). Unreleased on top of v0.3.0:
-`+EchoAggregation+` (mirrored from echo-types `+703dd77+`). Test suite:
-*285 passing assertions across 21 testsets*, organised as finite shadows of named Agda lemmas
+`+EchoAggregation+` (mirrored from echo-types `+703dd77+`, not from
+`+eed4250+`). Test suite:
+*290 passing assertions across 21 testsets*, organised as finite shadows of named Agda lemmas
 plus the semantic-fibre vocabulary exercise over the kernel. Registered
 as `+EchoTypes+` in the hyperpolymath professional registry; *not*
 registered in the Julia General registry and intentionally *not* part of
