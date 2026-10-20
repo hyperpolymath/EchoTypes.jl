@@ -479,6 +479,14 @@ using Test
                                         (v for v in 1:2), (v for v in 3:5))
         @test oplus_fold(sum_monoid(), (x for x in 1:3 if x > 1)) == 5
 
+        # Concatenation does not promote element types: an exact (non-promoting)
+        # max over an Int and a Float64 that `vcat` would have rounded together.
+        X = Monoid(0, (a, b) -> a > b ? a : b)
+        @test monoid_laws_hold(X, [0, 1, 2, 2^53, 2^53 + 1, 0.5])
+        @test oplus_fold_append_holds(X, [2^53 + 1], [Float64(2^53)])
+        @test aggregation_as_fold_holds(GroupAggregator(identity), X,
+                                        [2^53 + 1], [Float64(2^53)])
+
         # Arrays of any shape are read as their flat iteration sequence, so
         # `vcat` appends them rather than stacking rows (non-commutative `*`).
         S = Monoid("", *)
@@ -509,6 +517,10 @@ using Test
     @testset "Aggregation: Example-PairSum macro instance + no-section (EchoAggregation.agda)" begin
         # pairSum is the sumMonoid fold of its two fields.
         @test all(pair_sum_is_fold, [(a, b) for a in 0:4 for b in 0:4])
+        # ℕ is modelled as Int: a narrower type would overflow in `pair_sum` but
+        # not in the fold, so it is rejected rather than silently disagreeing.
+        @test_throws MethodError pair_sum((Int8(100), Int8(100)))
+        @test_throws MethodError pair_sum_is_fold((Int8(100), Int8(100)))
 
         # Many-to-one: distinct ledgers, one total, distinct echoes.
         @test pair_sum_collapses()
