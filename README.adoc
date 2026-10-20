@@ -136,6 +136,14 @@ audience move 4 — blur loses perturbation tag)
 `+source_no_section_holds+`, `+gap_paired+` |`+EchoLLEncoding.agda+`
 (cementing-negative — the LL `+!A := 1+` shadow admits an encoded
 section paired with source-side no-section)
+|*unreleased* `+Monoid+`, `+GroupAggregator+`, `+oplus_fold+`,
+`+aggregate_values+`, `+aggregation_as_fold_holds+`, `+sum_monoid+` /
+`+count_monoid+` / `+max_monoid+` / `+min_monoid+`,
+`+no_canonical_disaggregation_of+`, `+pair_sum+` and its
+`+pair_sum_*+` checks |`+EchoAggregation.agda+` (general monoid/group
+aggregation, echo-types#175; the macro `+pairSum+` ledger is an instance.
+Laws are checked on samples, not proved; `+avg+` is absent because it is
+not a monoid)
 |===
 
 ==== What is intentionally NOT mirrored
@@ -233,8 +241,9 @@ v0.3.0 adds executable shadows of the Tier-3 audience-facing spine that
 landed upstream on 2026-05-27/28 (`+EchoProvenance+`, `+EchoSecurity+`,
 `+EchoProbabilisticSupport+`, `+EchoDifferential+`) plus the
 cementing-negative `+EchoLLEncoding+` (LL shallow-encoding gap with
-paired source-side no-section). Test suite: *258 passing assertions
-across 19 testsets*, organised as finite shadows of named Agda lemmas
+paired source-side no-section). Unreleased on top of v0.3.0:
+`+EchoAggregation+` (mirrored from echo-types `+703dd77+`). Test suite:
+*285 passing assertions across 21 testsets*, organised as finite shadows of named Agda lemmas
 plus the semantic-fibre vocabulary exercise over the kernel. Registered
 as `+EchoTypes+` in the hyperpolymath professional registry; *not*
 registered in the Julia General registry and intentionally *not* part of

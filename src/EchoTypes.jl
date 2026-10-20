@@ -24,6 +24,11 @@
 # worked instance`) + cementing-negative EchoLLEncoding (the
 # trivial-⊤-shadow LL gap with paired source-side no-section).
 #
+# Unreleased on top of v0.3.0: EchoAggregation (general monoid/group
+# aggregation, echo-types#175), mirrored from echo-types origin/main
+# @ 703dd77af402e959b46f49e8ce2e084521bedbae. The rest of this header's
+# provenance pin is unchanged.
+#
 # Retraction discipline (R-2026-05-18): no graded-comonad framing,
 # no universal-property or conservativity claims appear here. F5 (full
 # OFS, honestly funext-qualified) earned back upstream 2026-05-27; the
@@ -88,7 +93,16 @@ export EchoWitness, echo_intro, in_fiber, fiber,
        # EchoLLEncoding (v0.3.0)
        LLShallowEncoding, trivial_encoding,
        trivial_encoding_has_section, ll_encoding_gap,
-       source_no_section_holds, gap_paired
+       source_no_section_holds, gap_paired,
+       # EchoAggregation (unreleased; general monoid/group form, echo-types#175)
+       Monoid, GroupAggregator, monoid_laws_hold,
+       oplus_fold, oplus_fold_append_holds,
+       aggregate_values, aggregation_as_fold_holds,
+       sum_monoid, count_monoid, max_monoid, min_monoid, min_inf,
+       count_aggregator, no_canonical_disaggregation_of,
+       pair_sum, pair_sum_is_fold, ledger1, ledger2,
+       pair_sum_collapses, pair_sum_non_injective,
+       no_canonical_disaggregation_pair_sum
 
 # ======================================================================
 # Kernel — Echo.agda
@@ -1275,5 +1289,167 @@ function gap_paired(linear_samples=(LEcho(true, Linear), LEcho(false, Linear)))
     (encoded_section = trivial_encoding_has_section(linear_samples),
      source_no_section = source_no_section_holds(linear_samples))
 end
+
+# ======================================================================
+# EchoAggregation.agda — aggregation as a monoid fold (echo-types#175)
+#
+# The GENERAL aggregation form: a `Monoid` carrier, a `GroupAggregator`
+# mapping values into it, the fold `⊕-fold`, and the homomorphism law
+# `aggregation-as-fold` (aggregating a concatenation = combining the two
+# aggregates). The macro-economics reading (micro ledger -> macro total,
+# the Sonnenschein–Mantel–Debreu critique) is one INSTANCE, mirrored as
+# the `pair_sum` block below.
+#
+# Finite-shadow caveat: Agda proves `assoc`, `identity-l/r` and the fold
+# law for ALL inputs. Julia can only check them on supplied samples, so
+# every `*_holds` function below is a falsifier on the data it is given,
+# never a proof. `avg` is deliberately absent (not a monoid), as upstream.
+# ======================================================================
+
+"""
+    Monoid(ε, op)
+
+The aggregation carrier (`Monoid`, EchoAggregation.agda): a unit `ε` and
+an associative binary `op` (`_⊕_`). Laws are NOT enforced at construction;
+`monoid_laws_hold` checks them on samples.
+"""
+struct Monoid{E,OP}
+    ε::E
+    op::OP
+end
+
+"""
+    monoid_laws_hold(M, samples) -> Bool
+
+`assoc`, `identity-l`, `identity-r` of `M`, checked over every triple /
+element drawn from `samples`. A `false` is a counterexample; a `true` is
+evidence on those samples only.
+"""
+function monoid_laws_hold(M::Monoid, samples)
+    all(a -> M.op(M.ε, a) == a && M.op(a, M.ε) == a, samples) &&
+        all(t -> M.op(M.op(t[1], t[2]), t[3]) == M.op(t[1], M.op(t[2], t[3])),
+            Iterators.product(samples, samples, samples))
+end
+
+"""
+    oplus_fold(M, xs)
+
+`⊕-fold`: fold a list through the monoid (`foldr op ε`).
+"""
+oplus_fold(M::Monoid, xs) = foldr(M.op, xs; init = M.ε)
+
+"""
+    oplus_fold_append_holds(M, xs, ys) -> Bool
+
+`⊕-fold-++`: the fold is a monoid homomorphism on list concatenation,
+`⊕-fold (xs ++ ys) == ⊕-fold xs ⊕ ⊕-fold ys`, checked at `xs`, `ys`.
+"""
+oplus_fold_append_holds(M::Monoid, xs, ys) =
+    oplus_fold(M, vcat(xs, ys)) == M.op(oplus_fold(M, xs), oplus_fold(M, ys))
+
+"""
+    GroupAggregator(agg)
+
+A value -> monoid-element aggregator (`GroupAggregator`,
+EchoAggregation.agda). The group-by key `K` is phantom upstream and has no
+runtime content here.
+"""
+struct GroupAggregator{AG}
+    agg::AG
+end
+
+"""
+    aggregate_values(G, M, vs)
+
+`aggregate-values`: map the aggregator over `vs`, then fold through `M`.
+"""
+aggregate_values(G::GroupAggregator, M::Monoid, vs) =
+    oplus_fold(M, map(G.agg, vs))
+
+"""
+    aggregation_as_fold_holds(G, M, vs, ws) -> Bool
+
+`aggregation-as-fold` (the #175 headline law): aggregating `vs ++ ws`
+equals combining `aggregate_values` of each, checked at `vs`, `ws`.
+Honest scope: the fold's homomorphism property, NOT SQL GROUP-BY's full
+operational semantics.
+"""
+aggregation_as_fold_holds(G::GroupAggregator, M::Monoid, vs, ws) =
+    aggregate_values(G, M, vcat(vs, ws)) ==
+        M.op(aggregate_values(G, M, vs), aggregate_values(G, M, ws))
+
+# --- The four concrete instances (ℕ modelled as non-negative Int) -----
+
+"`sumMonoid`: (ℕ, 0, +)."
+sum_monoid() = Monoid(0, +)
+
+"`countMonoid`: the SAME monoid as `sum_monoid`; counting happens in the aggregator."
+count_monoid() = sum_monoid()
+
+"`maxMonoid`: (ℕ, 0, max). 0 is the max-identity on ℕ."
+max_monoid() = Monoid(0, max)
+
+"""
+    min_inf(a, b)
+
+`_⊓∞_`: min over ℕ ∪ {∞}, with `nothing` = ∞ (the min-identity) and an
+`Int` standing for `just n`.
+"""
+min_inf(a::Nothing, b) = b
+min_inf(a::Integer, b::Nothing) = a
+min_inf(a::Integer, b::Integer) = min(a, b)
+
+"`minMonoid`: (ℕ ∪ {∞}, ∞, ⊓∞) with `nothing` = ∞."
+min_monoid() = Monoid(nothing, min_inf)
+
+"`countAggregator`: every value contributes 1 to the sum monoid."
+count_aggregator() = GroupAggregator(_ -> 1)
+
+"""
+    no_canonical_disaggregation_of(agg_map, x, y) -> Bool
+
+`no-canonical-disaggregation-of`: an aggregation map with a collision
+(`x != y`, `agg_map(x) == agg_map(y)`) admits no section. This is
+`no_section_of_collapsing_map` under aggregation-flavoured names, as
+upstream. It refutes a *section* (a left inverse), NOT the existence of
+some representative choice.
+"""
+no_canonical_disaggregation_of(agg_map, x, y) =
+    no_section_of_collapsing_map(agg_map, x, y)
+
+# --- Example-PairSum: the macro instance (ℕ × ℕ -> ℕ by +) -------------
+
+"`pairSum (a , b) = a + b`."
+pair_sum(p::Tuple{Integer,Integer}) = p[1] + p[2]
+
+"""
+    pair_sum_is_fold(p) -> Bool
+
+`pairSum-is-fold`: `pair_sum` IS the `sum_monoid` fold of its two fields,
+so the macro instance is a special case of the general form.
+"""
+pair_sum_is_fold(p::Tuple{Integer,Integer}) =
+    pair_sum(p) == oplus_fold(sum_monoid(), [p[1], p[2]])
+
+"`ledger₁ = (0 , 1)`."
+ledger1() = (0, 1)
+
+"`ledger₂ = (1 , 0)`."
+ledger2() = (1, 0)
+
+"`pairSum-collapses`: both ledgers aggregate to 1."
+pair_sum_collapses() = pair_sum(ledger1()) == pair_sum(ledger2())
+
+"""
+    pair_sum_non_injective() -> Bool
+
+`pairSum-non-injective`: the two echoes over total 1 are distinct.
+"""
+pair_sum_non_injective() =
+    echo_intro(pair_sum, ledger1()) != echo_intro(pair_sum, ledger2())
+
+"`Example-PairSum.no-canonical-disaggregation`: no section of `pair_sum`."
+no_canonical_disaggregation_pair_sum() =
+    no_canonical_disaggregation_of(pair_sum, ledger1(), ledger2())
 
 end # module EchoTypes

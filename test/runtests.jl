@@ -432,4 +432,70 @@ using Test
         @test gp.encoded_section
         @test gp.source_no_section
     end
+
+    # ------------------------------------------------------------------
+    # EchoAggregation (general monoid/group form, echo-types#175; mirrors
+    # echo-types main @ 703dd77). Finite shadow: laws are checked on
+    # samples, never proved. HONEST BOUND: the fold's homomorphism law,
+    # NOT SQL GROUP-BY semantics; `avg` is absent (not a monoid).
+    # ------------------------------------------------------------------
+
+    @testset "Aggregation: monoid fold + homomorphism law (EchoAggregation.agda)" begin
+        nat = 0:6
+        for M in (sum_monoid(), count_monoid(), max_monoid())
+            @test monoid_laws_hold(M, nat)
+        end
+        # min over ℕ ∪ {∞}: `nothing` is ∞.
+        mins = [nothing; collect(nat)]
+        @test monoid_laws_hold(min_monoid(), mins)
+
+        # Falsifier: a non-monoid is rejected (subtraction is not associative;
+        # 0 is only a right identity), so `monoid_laws_hold` can say `false`.
+        @test !monoid_laws_hold(Monoid(0, -), nat)
+
+        # ⊕-fold-++ at each instance.
+        @test oplus_fold_append_holds(sum_monoid(), [1, 2, 3], [4, 5])
+        @test oplus_fold_append_holds(max_monoid(), [1, 5, 3], [4, 2])
+        @test oplus_fold_append_holds(min_monoid(), [3, nothing, 1], [4, 2])
+        @test oplus_fold_append_holds(sum_monoid(), Int[], [4, 5])
+        @test oplus_fold_append_holds(min_monoid(), Union{Nothing,Int}[], Union{Nothing,Int}[])
+
+        # Concrete fold values.
+        @test oplus_fold(sum_monoid(), [1, 2, 3]) == 6
+        @test oplus_fold(max_monoid(), [1, 5, 3]) == 5
+        @test oplus_fold(min_monoid(), [3, 1, 2]) == 1
+        @test oplus_fold(min_monoid(), Union{Nothing,Int}[]) === nothing   # empty min = ∞
+
+        # aggregation-as-fold with the worked count aggregator:
+        # count of a concatenation = sum of the counts.
+        C = count_aggregator()
+        @test aggregate_values(C, sum_monoid(), [:a, :b, :c]) == 3
+        @test aggregate_values(C, sum_monoid(), Symbol[]) == 0
+        @test aggregation_as_fold_holds(C, sum_monoid(), [:a, :b], [:c, :d, :e])
+
+        # A value-dependent aggregator over max.
+        G = GroupAggregator(v -> v.price)
+        rows = [(price = 3,), (price = 9,), (price = 4,)]
+        @test aggregate_values(G, max_monoid(), rows) == 9
+        @test aggregation_as_fold_holds(G, max_monoid(), rows[1:1], rows[2:3])
+    end
+
+    @testset "Aggregation: Example-PairSum macro instance + no-section (EchoAggregation.agda)" begin
+        # pairSum is the sumMonoid fold of its two fields.
+        @test all(pair_sum_is_fold, [(a, b) for a in 0:4 for b in 0:4])
+
+        # Many-to-one: distinct ledgers, one total, distinct echoes.
+        @test pair_sum_collapses()
+        @test ledger1() != ledger2()
+        @test pair_sum_non_injective()
+        @test in_fiber(pair_sum, echo_intro(pair_sum, ledger1()), 1)
+        @test in_fiber(pair_sum, echo_intro(pair_sum, ledger2()), 1)
+
+        # Keystone: no canonical disaggregation (no section).
+        @test no_canonical_disaggregation_pair_sum()
+
+        # Matched negative: an injective aggregation has no collision to
+        # exhibit, so the witness correctly does not fire.
+        @test !no_canonical_disaggregation_of(identity, ledger1(), ledger2())
+    end
 end
