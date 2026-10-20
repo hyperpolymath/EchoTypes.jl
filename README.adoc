@@ -64,7 +64,7 @@ The Agda. This release mirrors `+hyperpolymath/echo-types+` at
 (2026-05-28 head, after the Tier-3 audience-facing spine landed —
 EchoProvenance, EchoSecurity, EchoProbabilisticSupport,
 EchoDifferential, EchoLLEncoding, plus the EchoCanonicalIdentitySuite
-re-export bundle). The unreleased `+EchoAggregation+` entry below is
+re-export bundle). The `+EchoAggregation+` entry below (new in v0.4.0) is
 mirrored from a later commit,
 `+703dd77af402e959b46f49e8ce2e084521bedbae+`; every other row keeps the
 pin above:
@@ -139,7 +139,7 @@ audience move 4 — blur loses perturbation tag)
 `+source_no_section_holds+`, `+gap_paired+` |`+EchoLLEncoding.agda+`
 (cementing-negative — the LL `+!A := 1+` shadow admits an encoded
 section paired with source-side no-section)
-|*unreleased* `+Monoid+`, `+GroupAggregator+`, `+oplus_fold+`,
+|*v0.4.0* `+Monoid+`, `+GroupAggregator+`, `+oplus_fold+`,
 `+aggregate_values+`, `+aggregation_as_fold_holds+`, `+sum_monoid+` /
 `+count_monoid+` / `+max_monoid+` / `+min_monoid+`,
 `+no_canonical_disaggregation_of+`, `+pair_sum+` and its
@@ -237,16 +237,16 @@ green and is the only correctness claim this package makes about itself.
 
 === Status
 
-`+v0.3.0+`, local development. The v0.1.0 surface (`+Echo+`,
+`+v0.4.0+`. The v0.1.0 surface (`+Echo+`,
 `+EchoResidue+`, `+EchoFiberCount+`, `+EchoThermodynamics+`) and the
 v0.2.0 Tier-1+Tier-2 canonical-identity spine are preserved unchanged;
 v0.3.0 adds executable shadows of the Tier-3 audience-facing spine that
 landed upstream on 2026-05-27/28 (`+EchoProvenance+`, `+EchoSecurity+`,
 `+EchoProbabilisticSupport+`, `+EchoDifferential+`) plus the
 cementing-negative `+EchoLLEncoding+` (LL shallow-encoding gap with
-paired source-side no-section). Unreleased on top of v0.3.0:
-`+EchoAggregation+` (mirrored from echo-types `+703dd77+`, not from
-`+eed4250+`). Test suite:
+paired source-side no-section). v0.3.0 was never tagged on its own; its
+content ships in v0.4.0, which adds `+EchoAggregation+` (mirrored from
+echo-types `+703dd77+`, not from `+eed4250+`). Test suite:
 *302 passing assertions across 21 testsets*, organised as finite shadows of named Agda lemmas
 plus the semantic-fibre vocabulary exercise over the kernel. Registered
 as `+EchoTypes+` in the hyperpolymath professional registry; *not*

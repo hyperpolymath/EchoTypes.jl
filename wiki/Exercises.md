@@ -33,7 +33,8 @@ julia> using EchoTypes
 ```
 
 The package is **not** in Julia's General registry. It carries its
-own SoT pin tying v0.3.0 to echo-types `eed4250` (2026-05-28).
+own SoT pin tying v0.4.0 to echo-types `eed4250` (2026-05-28), except
+`EchoAggregation`, which is pinned to `703dd77`.
 
 ---
 
