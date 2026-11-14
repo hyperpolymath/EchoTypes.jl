@@ -11,7 +11,7 @@
 #
 # Usage:
 #   scripts/check-agda-citations.sh extract
-#       Print the cited names found in src/, one per line, sorted.
+#       Print the cited names found in src/ (all subdirectories), one per line, sorted.
 #   scripts/check-agda-citations.sh verify <echo-types checkout>
 #       Check that the fixture matches src/, and that every name in it is
 #       declared in an .agda file of the checkout. Exit 0 when both hold,
@@ -26,7 +26,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 FIXTURE="$ROOT/test/agda-citations.txt"
 
 extract() {
-  grep -ohE '`[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)+`' "$ROOT"/src/*.jl \
+  find "$ROOT/src" -type f -name '*.jl' -exec grep -ohE '`[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)+`' {} + \
     | tr -d '`' | LC_ALL=C sort -u
 }
 
