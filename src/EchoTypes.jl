@@ -581,7 +581,7 @@ function injective_fibres_proj_unique(f, domain)
 end
 
 # ======================================================================
-# EchoNoSectionGeneric.agda — generalisation of `no-section`
+# EchoNoSectionGeneric.agda — generalisation of `no-section-collapse-to-residue` (EchoResidue.agda)
 #
 # For ANY `lower : A → R` with two distinct elements collapsing to the
 # same residue, no section exists. The existing
@@ -790,7 +790,7 @@ end
 # Echo carries the lost tag, the residue lowering forgets it. The
 # audience-side framing differs; the formalism is one shape. Each
 # Julia record + theorem set below mirrors a named Agda module —
-# names match the Agda `audience-facing` headlines exactly so the
+# names match the Agda audience-facing headlines exactly so the
 # Julia↔Agda lookup remains 1:1.
 #
 # Security uses a different shape: per-region `exit : Resource →
