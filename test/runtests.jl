@@ -546,9 +546,9 @@ using Test
         cite = r"`([A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+)`"
         srcdir = joinpath(@__DIR__, "..", "src")
         cited = Set{String}()
-        for f in readdir(srcdir; join = true)
-            endswith(f, ".jl") || continue
-            for m in eachmatch(cite, read(f, String))
+        for (root, _, files) in walkdir(srcdir), name in files
+            endswith(name, ".jl") || continue
+            for m in eachmatch(cite, read(joinpath(root, name), String))
                 push!(cited, m.captures[1])
             end
         end
