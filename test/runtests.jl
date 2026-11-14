@@ -536,4 +536,28 @@ using Test
         # exhibit, so the witness correctly does not fire.
         @test !no_canonical_disaggregation_of(identity, ledger1(), ledger2())
     end
+
+    @testset "Agda citations: every cited lemma is recorded (test/agda-citations.txt)" begin
+        # A backticked, hyphenated name in src/ cannot be a Julia identifier,
+        # so it is an echo-types lemma. Each one must be listed in the fixture,
+        # which CI checks against echo-types (scripts/check-agda-citations.sh).
+        # This offline half fails when a citation is added or removed without
+        # updating the fixture.
+        cite = r"`([A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+)`"
+        srcdir = joinpath(@__DIR__, "..", "src")
+        cited = Set{String}()
+        for f in readdir(srcdir; join = true)
+            endswith(f, ".jl") || continue
+            for m in eachmatch(cite, read(f, String))
+                push!(cited, m.captures[1])
+            end
+        end
+        lines = readlines(joinpath(@__DIR__, "agda-citations.txt"))
+        recorded = Set(strip(l) for l in lines
+                       if !isempty(strip(l)) && !startswith(strip(l), "#"))
+        @test !isempty(cited)
+        @test sort(collect(setdiff(cited, recorded))) == String[]
+        @test sort(collect(setdiff(recorded, cited))) == String[]
+        @test any(l -> startswith(l, "# echo-types-commit: "), lines)
+    end
 end
