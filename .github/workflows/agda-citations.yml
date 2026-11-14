@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MPL-2.0
+# Checks that every echo-types lemma cited in src/ (test/agda-citations.txt)
+# is still declared in hyperpolymath/echo-types at the pinned commit. The
+# Julia suite checks the fixture against src/ offline; this job adds the
+# check against the Agda source. Bump the pin in the fixture to re-check
+# against a newer echo-types.
+name: "Agda citation check"
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: agda-citations-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  citations:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the pinned echo-types commit
+        id: pin
+        run: |
+          commit=$(sed -n 's/^# echo-types-commit: \([0-9a-f]\{40\}\)$/\1/p' test/agda-citations.txt)
+          if [ -z "$commit" ]; then
+            echo "test/agda-citations.txt has no '# echo-types-commit: <40-hex sha>' line" >&2
+            exit 1
+          fi
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: hyperpolymath/echo-types
+          ref: ${{ steps.pin.outputs.commit }}
+          path: echo-types
+          persist-credentials: false
+      - name: Check the cited names against echo-types
+        run: sh scripts/check-agda-citations.sh verify echo-types

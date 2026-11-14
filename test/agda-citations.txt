@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: MPL-2.0
+# Agda names cited in src/ (backticked, hyphenated), one per line.
+# Checked against hyperpolymath/echo-types at the commit below by
+# scripts/check-agda-citations.sh; CI re-checks it on every change.
+# Regenerate the list with: scripts/check-agda-citations.sh extract
+# echo-types-commit: dedda7505e8418d81742a588060044e31395ea1f
+
+Echo-comp-iso-from
+Echo-comp-iso-to
+FiberSize-fin
+aggregate-values
+aggregation-as-fold
+audit-no-recovery-at
+bennett-reversible
+blur-collapses-perturbations-at
+bool-indexed-nat-sampling
+bool-over-nat-provenance
+bool-perturbed-nat-sensitivity
+cancel-iso-from
+cancel-iso-to
+const-fibre-section
+echo-carries-perturbation
+echo-carries-which-index
+echo-false
+echo-intro
+echo-to-residue
+echo-true
+echoes-distinguish-tag
+entropy-shadow
+entropy-shadow-blind
+equiv-fibre-center
+equiv-fibre-proj-unique
+equiv-implies-injective
+exit-collapses-at
+f-inv
+fiber-erasure-bound
+gap-paired
+identity-l
+identity-r
+injective-fibres-proj-unique
+inv-f
+landauer-bound
+landauer-collapse
+ll-encoding-gap
+map-over
+map-over-comp
+map-over-id
+mode-equality-strictly-finer-at-linear
+no-canonical-disaggregation-of
+no-section-collapse-to-residue
+no-section-of-collapsing-map
+no-section-weaken
+no-section-when-non-injective-at-y
+ofs-witness
+pairSum-collapses
+pairSum-is-fold
+pairSum-non-injective
+projection-fibre-iso
+provenance-collapses-at
+region-exit-audit-instance
+residue-collapses-tags
+residue-loses-index
+residue-loses-perturbation
+shannon-shadow
+source-no-section
+strict-weakening-collapse
+support-collapses-at
+trivial-encoding
+trivial-encoding-has-section
