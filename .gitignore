@@ -6,3 +6,5 @@
 *.jl.mem
 /docs/build/
 .DS_Store
+
+node_modules/
